@@ -22,14 +22,16 @@
             getFirestore, doc, setDoc, onSnapshot, collection
         };
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-  apiKey: "AIzaSyA55ut5MKfguZqBxgflgLr_CZxM_Q0rqY8",
-  authDomain: "reforapp-dd8e1.firebaseapp.com",
-  projectId: "reforapp-dd8e1",
-  storageBucket: "reforapp-dd8e1.firebasestorage.app",
-  messagingSenderId: "148499064385",
-  appId: "1:148499064385:web:074ff818fb7ff8548508c0",
-  measurementId: "G-60835RXETF"};
+        // CHAVE REAL DO FIREBASE INTEGRADA
+        const firebaseConfig = {
+            apiKey: "AIzaSyA55ut5MKfguZqBxgflgLr_CZxM_Q0rqY8",
+            authDomain: "reforapp-dd8e1.firebaseapp.com",
+            projectId: "reforapp-dd8e1",
+            storageBucket: "reforapp-dd8e1.firebasestorage.app",
+            messagingSenderId: "148499064385",
+            appId: "1:148499064385:web:074ff818fb7ff8548508c0",
+            measurementId: "G-60835RXETF"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -349,8 +351,8 @@
     <footer class="bg-slate-900 border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500 mt-auto">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <p>GymUpholstery Cloud &copy; 2026 - Sincronização em Tempo Real</p>
-            <p class="flex items-center gap-3 text-emerald-400">
-                <span id="cloud-status"><i class="fa-solid fa-circle-nodes"></i> Conectado à Nuvem</span>
+            <p class="flex items-center gap-3 text-slate-400">
+                <span id="cloud-status"><i class="fa-solid fa-spinner fa-spin text-brand-cyan"></i> Conectando à Nuvem...</span>
             </p>
         </div>
     </footer>
@@ -419,6 +421,7 @@
         let currentMachineId = '';
         let currentSelectedPartId = null;
         let pendingDamagePhotoDataUrl = null;
+        let isCloudConnected = false;
 
         let savedBrandsList = ['Movement', 'Technogym', 'Righetto', 'Life Fitness', 'Hammer Strength'];
         let techDraft = {
@@ -486,6 +489,12 @@
             const db = window.db;
             const appId = window.appId;
 
+            isCloudConnected = true;
+            const statusEl = document.getElementById('cloud-status');
+            if (statusEl) {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-nodes text-emerald-400"></i> <span class="text-emerald-400 font-semibold">Conectado à Nuvem</span>';
+            }
+
             const machinesColRef = collection(db, 'artifacts', appId, 'public', 'data', 'gym_machines');
             const requestsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'gym_requests');
 
@@ -525,7 +534,8 @@
         };
 
         window.initLocalFallback = function() {
-            document.getElementById('cloud-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Modo Local (Offline)';
+            if (isCloudConnected) return;
+            document.getElementById('cloud-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> <span class="text-amber-400">Modo Local (Offline)</span>';
             gymDatabase = defaultInitialDb;
             currentMachineId = 'EXTENSORA';
             populateMachineDropdown();
@@ -535,21 +545,28 @@
         };
 
         window.onload = function() {
+            renderBrandChips();
+            renderTechPinsOverlay();
+            renderTechStep3();
             setTimeout(() => {
-                if (Object.keys(gymDatabase).length === 0) {
+                if (!isCloudConnected && Object.keys(gymDatabase).length === 0) {
                     initLocalFallback();
                 }
-            }, 1500);
+            }, 6000);
         };
 
         async function saveMachineToCloud(machineObj) {
             try {
                 const { doc, setDoc } = window.firebaseModules;
                 await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines', machineObj.id), machineObj);
-                showToast('Máquina sincronizada na nuvem!', 'success');
-            } catch (e) {
                 gymDatabase[machineObj.id] = machineObj;
-                renderCurrentMachine();
+                showToast('Máquina salva e sincronizada na nuvem!', 'success');
+                return true;
+            } catch (e) {
+                console.error("Erro ao salvar no Firebase:", e);
+                gymDatabase[machineObj.id] = machineObj;
+                showToast(`Aviso: Salvo apenas localmente (${e.code || 'erro na nuvem'}).`, 'info');
+                return false;
             }
         }
 
@@ -557,140 +574,144 @@
             try {
                 const { doc, setDoc } = window.firebaseModules;
                 await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_requests', reqObj.id), reqObj);
-                showToast('Pedido de reforma enviado à nuvem!', 'success');
             } catch (e) {
-                maintenanceRequests.unshift(reqObj);
-                updateMaintenanceBadge();
+                console.error("Erro ao salvar pedido:", e);
+            }
+        }
+
+        function compressImageFile(file, maxWidth = 900, quality = 0.72) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                showToast('Otimizando foto para nuvem...', 'info');
+                const compressedDataUrl = await compressImageFile(file);
+                gymDatabase[currentMachineId].imageUrl = compressedDataUrl;
+                await saveMachineToCloud(gymDatabase[currentMachineId]);
+                renderPhotoAndPins(gymDatabase[currentMachineId]);
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao processar a foto.', 'info');
             }
         }
 
         function populateMachineDropdown() {
-            const selectEl = document.getElementById('machine-select');
-            if (!selectEl) return;
-            selectEl.innerHTML = '';
+            const select = document.getElementById('machine-select');
+            if (!select) return;
+            select.innerHTML = '';
             Object.keys(gymDatabase).forEach(key => {
-                const item = gymDatabase[key];
-                const option = document.createElement('option');
-                option.value = item.id;
-                option.textContent = `${item.name} (${item.code})`;
-                selectEl.appendChild(option);
+                const m = gymDatabase[key];
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.name} (${m.code})`;
+                if (m.id === currentMachineId) opt.selected = true;
+                select.appendChild(opt);
             });
-            selectEl.value = currentMachineId;
         }
 
         function changeMachine(machineId) {
-            if (!gymDatabase[machineId]) return;
             currentMachineId = machineId;
-            currentSelectedPartId = null;
             renderCurrentMachine();
         }
 
         function renderCurrentMachine() {
             const machine = gymDatabase[currentMachineId];
             if (!machine) return;
-            
-            document.getElementById('machine-name').textContent = machine.name;
-            document.getElementById('machine-code').textContent = machine.code;
+
+            document.getElementById('machine-category').textContent = machine.category;
             document.getElementById('machine-brand').textContent = machine.brand || 'Movement';
+            
             const mfgCodeEl = document.getElementById('machine-mfg-code');
             if (machine.manufacturerCode) {
-                mfgCodeEl.textContent = `Cód. Fab: ${machine.manufacturerCode}`;
+                mfgCodeEl.textContent = `FAB: ${machine.manufacturerCode}`;
                 mfgCodeEl.classList.remove('hidden');
             } else {
                 mfgCodeEl.classList.add('hidden');
             }
-            document.getElementById('machine-category').textContent = machine.category;
+
+            document.getElementById('machine-code').textContent = machine.code;
+            document.getElementById('machine-name').textContent = machine.name;
             document.getElementById('machine-location').innerHTML = `<i class="fa-solid fa-location-dot text-slate-500 mr-1"></i> Localização: ${machine.location}`;
-            document.getElementById('parts-count-badge').textContent = `${machine.parts.length} Peças`;
-            document.getElementById('machine-select').value = currentMachineId;
+            document.getElementById('machine-last-inspect').innerHTML = `<i class="fa-solid fa-cloud text-brand-cyan mr-1"></i> Sincronizado na Nuvem`;
 
             renderPhotoAndPins(machine);
             renderPartsList(machine);
+            document.getElementById('parts-count-badge').textContent = `${machine.parts.length} Peças`;
         }
 
         function renderPhotoAndPins(machine) {
-            const photoContainer = document.getElementById('photo-container');
-            let pinsHTML = machine.parts.map((part, index) => {
-                let badgeColor = 'bg-emerald-500 text-slate-950';
-                let borderColor = 'border-emerald-400';
-                
-                if (part.status === 'worn') {
-                    badgeColor = 'bg-amber-400 text-slate-950';
-                    borderColor = 'border-amber-300';
-                } else if (part.status === 'replace') {
-                    badgeColor = 'bg-brand-accent text-slate-950 font-black';
-                    borderColor = 'border-white';
-                }
-
-                const isSelected = part.id === currentSelectedPartId;
-                const ringStyle = isSelected ? 'ring-4 ring-white scale-125 z-20' : 'z-10';
-
-                return `
-                    <button 
-                        onclick="selectPart('${part.id}')"
-                        style="left: ${part.xPercent || 50}%; top: ${part.yPercent || 50}%;"
-                        class="absolute transform -translate-x-1/2 -translate-y-1/2 group/pin transition-all duration-200 focus:outline-none ${ringStyle}">
-                        <div class="hotspot-pin w-9 h-9 rounded-full ${badgeColor} border-2 ${borderColor} shadow-xl flex items-center justify-center font-black text-xs cursor-pointer">
-                            <i class="fa-solid fa-couch text-[11px] mr-0.5"></i> ${index + 1}
-                        </div>
-                    </button>
-                `;
-            }).join('');
-
-            photoContainer.innerHTML = `
-                <img src="${machine.imageUrl}" alt="${machine.name}" class="w-full h-full object-cover rounded-xl opacity-90">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none"></div>
-                <div class="absolute inset-0 pointer-events-none">${pinsHTML.replace(/pointer-events-none/g, '')}</div>
+            const container = document.getElementById('photo-container');
+            container.innerHTML = `
+                <img src="${machine.imageUrl}" alt="${machine.name}" class="w-full h-full object-cover">
             `;
-        }
 
-        function renderPartsList(machine) {
-            const listEl = document.getElementById('parts-list');
-            listEl.innerHTML = '';
+            machine.parts.forEach((part, idx) => {
+                let colorClass = 'bg-emerald-500 text-slate-950';
+                if (part.status === 'worn') colorClass = 'bg-amber-400 text-slate-950';
+                if (part.status === 'replace') colorClass = 'bg-brand-accent text-slate-950 hotspot-pin';
 
-            machine.parts.forEach((part, index) => {
-                let statusBadge = '';
-                if (part.status === 'good') {
-                    statusBadge = `<span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">Conservado</span>`;
-                } else if (part.status === 'worn') {
-                    statusBadge = `<span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold">Desgaste</span>`;
-                } else {
-                    statusBadge = `<span class="text-[10px] bg-brand-accent/20 text-brand-accent border border-brand-accent/40 px-2 py-0.5 rounded-full font-bold animate-pulse">Reforma Urgente</span>`;
-                }
-
-                const isSelected = part.id === currentSelectedPartId;
-                const activeStyle = isSelected ? 'border-brand-accent bg-slate-800' : 'border-slate-800 bg-slate-950/50 hover:bg-slate-800/60';
-
-                listEl.insertAdjacentHTML('beforeend', `
-                    <div onclick="selectPart('${part.id}')" class="p-3.5 rounded-2xl border ${activeStyle} cursor-pointer transition flex items-center justify-between gap-3 group">
-                        <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-xl bg-slate-800 text-brand-accent border border-slate-700 flex items-center justify-center font-bold text-xs">
-                                ${index + 1}
-                            </span>
-                            <div>
-                                <h4 class="text-xs sm:text-sm font-semibold text-white">${part.name}</h4>
-                                <p class="text-[10px] text-slate-400 font-mono">Cor: ${part.vinylType} | Fixação: ${part.fixing}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            ${statusBadge}
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-600"></i>
-                        </div>
-                    </div>
-                `);
+                const pin = document.createElement('button');
+                pin.className = `absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${colorClass} font-black text-xs flex items-center justify-center border-2 border-white shadow-lg transition hover:scale-110`;
+                pin.style.left = `${part.xPercent}%`;
+                pin.style.top = `${part.yPercent}%`;
+                pin.textContent = idx + 1;
+                pin.title = part.name;
+                pin.onclick = () => selectPart(part.id);
+                container.appendChild(pin);
             });
         }
 
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                gymDatabase[currentMachineId].imageUrl = e.target.result;
-                saveMachineToCloud(gymDatabase[currentMachineId]);
-                renderPhotoAndPins(gymDatabase[currentMachineId]);
-            };
-            reader.readAsDataURL(file);
+        function renderPartsList(machine) {
+            const list = document.getElementById('parts-list');
+            list.innerHTML = machine.parts.map((part, idx) => {
+                let badge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">OK</span>`;
+                if (part.status === 'worn') badge = `<span class="bg-amber-400/10 text-amber-400 border border-amber-400/30 px-2 py-0.5 rounded text-[10px] font-bold">Desgaste</span>`;
+                if (part.status === 'replace') badge = `<span class="bg-brand-accent/10 text-brand-accent border border-brand-accent/30 px-2 py-0.5 rounded text-[10px] font-bold">Troca</span>`;
+
+                const isSelected = currentSelectedPartId === part.id;
+                const activeStyle = isSelected ? 'border-brand-accent bg-slate-950' : 'border-slate-800 bg-slate-950/60 hover:bg-slate-950';
+
+                return `
+                    <div onclick="selectPart('${part.id}')" class="p-3 rounded-2xl border ${activeStyle} cursor-pointer transition flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+                            <div>
+                                <h4 class="text-xs font-bold text-white">${part.name}</h4>
+                                <p class="text-[11px] text-slate-400 font-mono">${part.code} • ${part.vinylType}</p>
+                            </div>
+                        </div>
+                        <div>${badge}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function selectPart(partId) {
@@ -750,12 +771,11 @@
             document.getElementById('modal-part-detail').classList.add('hidden');
         }
 
-        function handleDamagePhotoSelect(event) {
+        async function handleDamagePhotoSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                pendingDamagePhotoDataUrl = e.target.result;
+            try {
+                pendingDamagePhotoDataUrl = await compressImageFile(file, 800, 0.7);
                 const preview = document.getElementById('damage-photo-preview');
                 const status = document.getElementById('damage-photo-status');
                 if (preview) {
@@ -763,11 +783,12 @@
                     preview.classList.remove('hidden');
                 }
                 if (status) {
-                    status.textContent = 'Foto anexada com sucesso!';
+                    status.textContent = 'Foto otimizada e anexada!';
                     status.classList.replace('text-slate-400', 'text-emerald-400');
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         function requestPartMaintenance(partId) {
@@ -855,11 +876,6 @@
             document.getElementById('modal-qr-scanner').classList.add('hidden');
         }
 
-        function updateMaintenanceBadge() {
-            const badge = document.getElementById('badge-requests-count');
-            if (badge) badge.textContent = maintenanceRequests.length;
-        }
-
         function toggleMaintenanceLog() {
             const modal = document.getElementById('modal-maintenance-log');
             if (modal.classList.contains('hidden')) {
@@ -868,6 +884,11 @@
             } else {
                 modal.classList.add('hidden');
             }
+        }
+
+        function updateMaintenanceBadge() {
+            const badge = document.getElementById('badge-requests-count');
+            if (badge) badge.textContent = maintenanceRequests.length;
         }
 
         function renderMaintenanceRequests() {
@@ -904,29 +925,30 @@
                 viewTech.classList.add('hidden');
                 btnManager.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-brand-accent text-slate-950 shadow';
                 btnTech.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white';
-                renderCurrentMachine();
             } else {
                 viewManager.classList.add('hidden');
                 viewTech.classList.remove('hidden');
                 btnTech.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-brand-accent text-slate-950 shadow';
                 btnManager.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white';
-                populateCloneDropdown();
                 renderBrandChips();
                 renderTechPinsOverlay();
                 renderTechStep3();
+                populateCloneDropdown();
             }
         }
 
-        function handleTechPhotoUpload(event) {
+        async function handleTechPhotoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                techDraft.imageUrl = e.target.result;
+            try {
+                showToast('Otimizando foto para nuvem...', 'info');
+                techDraft.imageUrl = await compressImageFile(file);
                 document.getElementById('tech-preview-img').src = techDraft.imageUrl;
-                showToast('Foto carregada!', 'success');
-            };
-            reader.readAsDataURL(file);
+                showToast('Foto carregada e otimizada!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao carregar foto.', 'info');
+            }
         }
 
         function handleTechCanvasClick(event) {
@@ -1019,189 +1041,4 @@
             container.innerHTML = savedBrandsList.map(brandName => {
                 const isSelected = techDraft.brand === brandName;
                 const style = isSelected
-                    ? 'border-brand-accent bg-brand-accent text-slate-950 font-bold'
-                    : 'border-slate-700 bg-slate-950 text-slate-300 font-semibold hover:border-slate-500';
-                return `
-                    <button type="button" onclick="selectTechBrand('${brandName}')" class="brand-chip px-3.5 py-2 rounded-xl border text-xs transition ${style}">
-                        ${brandName}
-                    </button>
-                `;
-            }).join('');
-        }
-
-        function selectTechBrand(brandName) {
-            techDraft.brand = brandName;
-            renderBrandChips();
-        }
-
-        function updateTechBrandFromInput(val) {
-            techDraft.brand = val.trim();
-        }
-
-        function addCustomBrandChip() {
-            const input = document.getElementById('tech-brand-input');
-            const newBrand = input.value.trim();
-            if (!newBrand) return;
-            if (!savedBrandsList.includes(newBrand)) savedBrandsList.push(newBrand);
-            selectTechBrand(newBrand);
-            input.value = '';
-            showToast(`Fabricante "${newBrand}" salvo!`, 'success');
-        }
-
-        function populateCloneDropdown() {
-            const cloneSelect = document.getElementById('tech-clone-select');
-            if (!cloneSelect) return;
-            cloneSelect.innerHTML = '';
-            Object.keys(gymDatabase).forEach(key => {
-                const m = gymDatabase[key];
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = `${m.name} (${m.brand || 'Padrão'})`;
-                cloneSelect.appendChild(opt);
-            });
-        }
-
-        function cloneMachineSpecs() {
-            const sourceId = document.getElementById('tech-clone-select').value;
-            const source = gymDatabase[sourceId];
-            if (!source) return;
-
-            document.getElementById('tech-machine-name').value = `${source.name} (Cópia)`;
-            document.getElementById('tech-machine-sector').value = source.category;
-            if (source.brand) selectTechBrand(source.brand);
-            showToast(`Ficha clonada de "${source.name}"!`, 'success');
-        }
-
-        function selectTechPartTab(index) {
-            activeTechPartIndex = index;
-            renderTechStep3();
-        }
-
-        function updateTechPinField(field, value, rerender = false) {
-            const pin = techDraft.pins[activeTechPartIndex];
-            if (!pin) return;
-            pin[field] = value;
-            if (rerender) renderTechStep3();
-        }
-
-        function renderTechStep3() {
-            const tabsContainer = document.getElementById('tech-parts-tabs');
-            const formContainer = document.getElementById('tech-active-part-form');
-            if (!tabsContainer || !formContainer) return;
-
-            if (techDraft.pins.length === 0) {
-                tabsContainer.innerHTML = `<span class="text-xs text-slate-500 italic">Nenhum estofado marcado ainda...</span>`;
-                formContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Toque na foto para marcar um estofado e configurar o revestimento.</p>`;
-                return;
-            }
-
-            tabsContainer.innerHTML = techDraft.pins.map((pin, idx) => {
-                const isActive = idx === activeTechPartIndex;
-                const style = isActive ? 'bg-brand-accent text-slate-950 font-black' : 'bg-slate-950 text-slate-300';
-                return `
-                    <button type="button" onclick="selectTechPartTab(${idx})" class="px-3.5 py-2 rounded-xl border border-slate-800 text-xs transition ${style}">
-                        #${idx + 1} ${pin.name}
-                    </button>
-                `;
-            }).join('');
-
-            const pin = techDraft.pins[activeTechPartIndex];
-            if (!pin) return;
-
-            const vinylOptions = ['Preto', 'Laranja', 'Marrom'];
-
-            formContainer.innerHTML = `
-                <h4 class="text-sm font-extrabold text-white">Configurar: ${pin.name}</h4>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-2">Revestimento:</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        ${vinylOptions.map(v => `
-                            <button type="button" onclick="updateTechPinField('vinyl', '${v}', true)" class="px-3 py-2 rounded-xl border text-xs font-bold transition ${pin.vinyl === v ? 'bg-brand-accent text-slate-950 border-brand-accent' : 'bg-slate-900 text-slate-300 border-slate-700'}">
-                                ${v}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-2">Sistema de Fixação:</label>
-                    <input type="text" id="tech-fixing-input" value="${pin.fixingType || '4 Parafusos'}" oninput="updateTechPinField('fixingType', this.value, false)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
-                </div>
-            `;
-        }
-
-        function saveNewTechnicalMachine() {
-            const machineName = document.getElementById('tech-machine-name').value.trim();
-            const sector = document.getElementById('tech-machine-sector').value;
-            const rawQr = document.getElementById('tech-qr-code-input').value.trim();
-            const brandValue = techDraft.brand || 'Movement';
-            const manufacturerCode = document.getElementById('tech-manufacturer-code').value.trim();
-
-            if (!machineName) {
-                showToast('Informe o nome do aparelho!', 'info');
-                return;
-            }
-            if (techDraft.pins.length === 0) {
-                showToast('Marque pelo menos 1 estofado na foto!', 'info');
-                return;
-            }
-
-            const newId = `MACHINE_${Date.now()}`;
-            const formattedTag = rawQr ? (rawQr.startsWith('TAG:') ? rawQr : `TAG: ${rawQr}`) : `TAG: #CAP-${Math.floor(100 + Math.random() * 899)}`;
-
-            const newParts = techDraft.pins.map((pin, idx) => ({
-                id: `${newId}-p${idx + 1}`,
-                name: pin.name,
-                code: manufacturerCode ? `${manufacturerCode}-0${idx + 1}` : `EST-${idx + 1}`,
-                status: 'good',
-                vinylType: pin.vinyl || 'Preto',
-                fixing: pin.fixingType || '4 Parafusos',
-                description: `Revestimento: ${pin.vinyl || 'Preto'} | Fixação: ${pin.fixingType || '4 Parafusos'}.`,
-                xPercent: pin.xPercent,
-                yPercent: pin.yPercent
-            }));
-
-            const newMachine = {
-                id: newId,
-                code: formattedTag,
-                brand: brandValue,
-                manufacturerCode: manufacturerCode,
-                name: machineName,
-                category: sector,
-                location: `${sector} - Nuvem`,
-                lastInspect: new Date().toLocaleDateString('pt-BR'),
-                imageUrl: techDraft.imageUrl,
-                parts: newParts
-            };
-
-            saveMachineToCloud(newMachine);
-            resetTechWizard(false);
-            currentMachineId = newId;
-            switchAppMode('manager');
-        }
-
-        function resetTechWizard(notify = true) {
-            techDraft = {
-                imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80',
-                qrCode: '',
-                brand: 'Movement',
-                name: '',
-                sector: 'Membros Inferiores',
-                pins: []
-            };
-            activeTechPartIndex = 0;
-            renderTechPinsOverlay();
-            renderTechStep3();
-            if (notify) showToast('Formulário limpo.', 'info');
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `p-4 rounded-2xl border shadow-2xl bg-slate-900 ${type === 'success' ? 'border-emerald-500 text-white' : 'border-brand-accent text-white'} flex items-center gap-3 text-xs sm:text-sm font-medium`;
-            toast.innerHTML = `<i class="fa-solid fa-cloud text-brand-accent text-lg"></i><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
-    </script>
-</body>
-</html>
+                    ?
