@@ -1,469 +1,352 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymUpholstery - Gestão de Capotaria</title>
-    <!-- Tailwind CSS CDN -->
+    <title>GymUpholstery - Gestão de Capotaria e Estofados</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        window.firebaseModules = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
-            getFirestore, doc, setDoc, onSnapshot, collection
-        };
-
-        // CHAVE REAL DO FIREBASE INTEGRADA
-        const firebaseConfig = {
-            apiKey: "AIzaSyA55ut5MKfguZqBxgflgLr_CZxM_Q0rqY8",
-            authDomain: "reforapp-dd8e1.firebaseapp.com",
-            projectId: "reforapp-dd8e1",
-            storageBucket: "reforapp-dd8e1.firebasestorage.app",
-            messagingSenderId: "148499064385",
-            appId: "1:148499064385:web:074ff818fb7ff8548508c0",
-            measurementId: "G-60835RXETF"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-gym-upholstery-app';
-
-        window.db = db;
-        window.auth = auth;
-        window.appId = appId;
-
-        async function initFirebaseAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && __initial_auth_token.trim() !== '') {
-                    try {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } catch (customErr) {
-                        console.warn("Custom token falhou, tentando login anônimo padrão:", customErr);
-                        await signInAnonymously(auth);
-                    }
-                } else {
-                    await signInAnonymously(auth);
-                }
-                if (typeof window.initCloudSync === 'function') {
-                    window.initCloudSync();
-                }
-            } catch (error) {
-                console.error("Firebase auth error:", error);
-                if (typeof window.initLocalFallback === 'function') {
-                    window.initLocalFallback();
-                }
-            }
-        }
-        initFirebaseAuth();
-    </script>
-
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            dark: '#0b0f17',
-                            card: '#161e2e',
-                            border: '#2a364f',
-                            accent: '#f97316',
-                            cyan: '#38bdf8',
-                            danger: '#ef4444',
-                            success: '#10b981'
+                            dark: '#0B0F17',
+                            card: '#131C2E',
+                            accent: '#F59E0B',
+                            cyan: '#06B6D4',
+                            emerald: '#10B981',
+                            rose: '#F43F5E'
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @keyframes hotspot-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.8); transform: scale(1); }
-            70% { box-shadow: 0 0 0 16px rgba(249, 115, 22, 0); transform: scale(1.15); }
-            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); transform: scale(1); }
+        body { font-family: 'Inter', sans-serif; }
+        .pin-pulse {
+            animation: pulse-ring 2s infinite;
         }
-        .hotspot-pin { animation: hotspot-pulse 2s infinite; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0f17; }
-        ::-webkit-scrollbar-thumb { background: #2a364f; border-radius: 4px; }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
     </style>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot };
+        window.dispatchEvent(new Event('firebase-loaded'));
+    </script>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-accent selection:text-slate-950">
 
-    <!-- TOP APP HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 lg:px-8 py-3 shadow-xl">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Header Navigation -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-accent text-slate-950 flex items-center justify-center font-black text-xl shadow-lg">
-                    <i class="fa-solid fa-scissors"></i>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-accent to-amber-600 flex items-center justify-center shadow-lg shadow-brand-accent/20">
+                    <i class="fa-solid fa-chair text-slate-950 text-lg font-black"></i>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-lg lg:text-xl tracking-tight text-white flex items-center gap-2">
-                        GymUpholstery <span class="text-brand-accent font-semibold text-xs px-2 py-0.5 rounded bg-brand-accent/10 border border-brand-accent/30">NUVEM</span>
+                    <h1 class="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
+                        GymUpholstery <span class="bg-brand-accent/15 text-brand-accent text-[10px] font-bold px-2 py-0.5 rounded-full border border-brand-accent/30">Total Health</span>
                     </h1>
-                    <p class="text-xs text-slate-400 hidden sm:block">Gestão Exclusiva de Estofados & Capotaria</p>
+                    <p class="text-[11px] text-slate-400 font-medium" id="cloud-status-text">Conectando à nuvem...</p>
                 </div>
             </div>
 
-            <!-- MODE SWITCHER -->
-            <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 order-3 sm:order-2 w-full sm:w-auto justify-center">
-                <button id="btn-mode-manager" onclick="switchAppMode('manager')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-brand-accent text-slate-950 shadow">
-                    <i class="fa-solid fa-building-user"></i> Modo Gerente
+            <div class="flex items-center gap-2">
+                <button onclick="toggleMaintenanceLog()" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-clipboard-list text-brand-accent"></i>
+                    <span class="hidden sm:inline">Ordens</span>
+                    <span id="badge-requests-count" class="bg-brand-accent text-slate-950 font-black text-[10px] px-1.5 py-0.2 rounded-full">0</span>
                 </button>
-                <button id="btn-mode-tech" onclick="switchAppMode('tech')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-screwdriver-wrench"></i> Modo Técnico (Cadastro)
-                </button>
-            </div>
-
-            <div class="flex items-center gap-2 sm:gap-3 order-2 sm:order-3">
-                <button onclick="openQRModal()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-brand-accent border border-brand-accent/40 font-bold px-3 py-2 sm:px-4 sm:py-2 rounded-xl transition text-xs sm:text-sm">
-                    <i class="fa-solid fa-qrcode text-base"></i>
-                    <span class="hidden md:inline">Ler QR Code</span>
-                </button>
-                <button onclick="toggleMaintenanceLog()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium px-3 py-2 sm:px-4 sm:py-2 rounded-xl transition text-xs sm:text-sm relative">
-                    <i class="fa-solid fa-scissors text-brand-cyan"></i>
-                    <span class="hidden md:inline">Reformas</span>
-                    <span id="badge-requests-count" class="bg-brand-danger text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                <button id="mode-toggle-btn" onclick="toggleAppMode()" class="bg-brand-accent hover:bg-amber-400 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs transition shadow-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span id="mode-btn-text">Modo Gerente</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- VIEW 1: MODO GERENTE -->
-    <main id="view-manager" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div class="flex-1 space-y-1">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span id="machine-category" class="text-xs uppercase tracking-wider font-bold text-brand-cyan bg-brand-cyan/10 px-2.5 py-0.5 rounded-full border border-brand-cyan/20">Membros Inferiores</span>
-                    <span id="machine-brand" class="text-xs font-semibold text-slate-300 bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-700">Movement</span>
-                    <span id="machine-mfg-code" class="hidden text-xs font-mono text-brand-accent bg-brand-accent/10 px-2.5 py-0.5 rounded-full border border-brand-accent/30">FAB: #000</span>
-                    <span id="machine-code" class="text-xs text-slate-400 font-mono">TAG: #EXT-01</span>
-                </div>
-                <h2 id="machine-name" class="text-xl sm:text-2xl font-black text-white">Cadeira Extensora Pro</h2>
-                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-1">
-                    <span id="machine-location"><i class="fa-solid fa-location-dot text-slate-500 mr-1"></i> Localização: Setor A - Perna</span>
-                    <span id="machine-last-inspect"><i class="fa-solid fa-cloud text-brand-cyan mr-1"></i> Sincronizado na Nuvem</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div class="flex-1 sm:w-64">
-                    <label for="machine-select" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Selecionar Equipamento:</label>
-                    <select id="machine-select" onchange="changeMachine(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-accent">
-                    </select>
-                </div>
-                <div class="flex items-center gap-2 self-end">
-                    <button onclick="openEditCurrentMachineModal()" class="bg-slate-800 hover:bg-slate-700 text-brand-cyan border border-slate-700 font-semibold px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5" title="Editar Aparelho">
-                        <i class="fa-solid fa-pen-to-square"></i> Editar
-                    </button>
-                    <button onclick="deleteCurrentMachine()" class="bg-slate-800 hover:bg-slate-700 text-brand-danger border border-slate-700 font-semibold px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5" title="Excluir Aparelho">
-                        <i class="fa-solid fa-trash-can"></i> Excluir
-                    </button>
-                    <label for="machine-photo-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-camera text-brand-accent"></i> Trocar Foto
-                        <input type="file" id="machine-photo-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                        <i class="fa-solid fa-hand-pointer text-brand-accent"></i> Toque nos marcadores para inspecionar o estofado
-                    </span>
-                    <div class="flex items-center gap-3 text-[11px]">
-                        <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> OK</span>
-                        <span class="flex items-center gap-1 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Desgaste</span>
-                        <span class="flex items-center gap-1 text-brand-accent"><span class="w-2.5 h-2.5 rounded-full bg-brand-accent"></span> Troca</span>
+    <!-- Main Application View -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- ==================== VIEW 1: MANAGER & INSPECTION MODE ==================== -->
+        <div id="view-manager" class="space-y-6">
+            
+            <!-- Top Controls Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="w-full md:w-auto flex-1 flex flex-col sm:flex-row items-center gap-3">
+                    <div class="w-full sm:w-72">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Selecionar Equipamento</label>
+                        <select id="machine-selector" onchange="onMachineDropdownChange(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-brand-accent">
+                        </select>
                     </div>
-                </div>
-                <div id="photo-container" class="relative w-full h-[340px] sm:h-[440px] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden select-none flex items-center justify-center">
-                </div>
-            </div>
-
-            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-couch text-brand-accent"></i> Estofados Cadastrados
-                    </h3>
-                    <span id="parts-count-badge" class="text-xs font-bold bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">0 Peças</span>
-                </div>
-                <div id="parts-list" class="space-y-2.5 flex-1 overflow-y-auto max-h-[420px] pr-1">
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- VIEW 2: MODO TÉCNICO (CADASTRO ÚNICO) -->
-    <main id="view-tech" class="hidden flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-brand-cyan bg-brand-cyan/10 px-2.5 py-1 rounded-full border border-brand-cyan/20">Cadastro Rápido em Nuvem</span>
-                <h2 class="text-xl sm:text-2xl font-black text-white mt-1.5">Cadastro de Estofados & Capotaria</h2>
-                <p class="text-xs text-slate-400">Tudo em uma única página: foto, marcadores, identificação e revestimento</p>
-            </div>
-            <button onclick="resetTechWizard()" class="self-start sm:self-auto text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-1.5">
-                <i class="fa-solid fa-rotate-left"></i> Limpar Formulário
-            </button>
-        </div>
-
-        <section class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">1</span>
-                        Foto do Equipamento & Marcadores
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Carregue a foto e <strong class="text-brand-accent">toque diretamente sobre cada estofado</strong> na imagem.</p>
-                </div>
-                <label for="tech-photo-input" class="cursor-pointer bg-brand-cyan hover:bg-sky-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-2 shadow-lg">
-                    <i class="fa-solid fa-camera"></i> Carregar Foto
-                    <input type="file" id="tech-photo-input" accept="image/*" class="hidden" onchange="handleTechPhotoUpload(event)">
-                </label>
-            </div>
-
-            <div class="relative w-full h-[320px] sm:h-[400px] bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700 overflow-hidden select-none flex items-center justify-center">
-                <div id="tech-photo-canvas" onclick="handleTechCanvasClick(event)" class="relative w-full h-full flex items-center justify-center cursor-crosshair">
-                    <img id="tech-preview-img" src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80" alt="Nova Máquina" class="w-full h-full object-contain opacity-90">
-                    <div id="tech-pins-overlay" class="absolute inset-0 pointer-events-none"></div>
-                </div>
-
-                <div id="tech-quick-pin-popover" class="hidden absolute z-30 bg-slate-900/95 backdrop-blur-md border border-brand-accent rounded-2xl p-3 shadow-2xl w-64 transform -translate-x-1/2 -translate-y-1/2" style="left: 50%; top: 50%;">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold text-brand-accent"><i class="fa-solid fa-location-crosshairs"></i> Nome do Estofado:</span>
-                        <button onclick="cancelQuickPin()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1.5 mb-2">
-                        <button type="button" onclick="confirmQuickPin('Assento')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-brand-accent hover:text-slate-950 text-white text-xs font-semibold rounded-lg transition text-left">Assento</button>
-                        <button type="button" onclick="confirmQuickPin('Encosto')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-brand-accent hover:text-slate-950 text-white text-xs font-semibold rounded-lg transition text-left">Encosto</button>
-                        <button type="button" onclick="confirmQuickPin('Rolete')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-brand-accent hover:text-slate-950 text-white text-xs font-semibold rounded-lg transition text-left">Rolete</button>
-                        <button type="button" onclick="confirmQuickPin('Apoio Braço')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-brand-accent hover:text-slate-950 text-white text-xs font-semibold rounded-lg transition text-left">Apoio Braço</button>
-                        <button type="button" onclick="confirmQuickPin('Apoio Joelho')" class="col-span-2 px-2.5 py-1.5 bg-slate-800 hover:bg-brand-accent hover:text-slate-950 text-white text-xs font-semibold rounded-lg transition text-left">Apoio Joelho / Coxa</button>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <input type="text" id="tech-custom-pin-name" placeholder="Outro nome..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-brand-accent">
-                        <button type="button" onclick="confirmQuickPin(document.getElementById('tech-custom-pin-name').value || 'Estofado Extra')" class="bg-brand-accent text-slate-950 font-bold px-2.5 py-1.5 rounded-lg text-xs">OK</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-300">Estofados Marcados (<span id="tech-pin-count">0</span>):</span>
-                        <span class="text-[11px] text-slate-500">Toque na foto acima</span>
-                    </div>
-                    <div id="tech-pins-chips" class="flex flex-wrap gap-2">
-                        <span class="text-xs text-slate-500 italic">Nenhum estofado marcado ainda...</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-center">
-                    <label class="block text-xs font-bold text-slate-300 mb-1.5"><i class="fa-solid fa-qrcode text-brand-accent mr-1"></i> Etiqueta QR Code Colada:</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="tech-qr-code-input" placeholder="Ex: #REM-04" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand-accent">
-                        <button type="button" onclick="simulateTechQRScan()" class="bg-slate-800 hover:bg-slate-700 text-brand-accent border border-brand-accent/40 font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center gap-1.5 whitespace-nowrap">
-                            <i class="fa-solid fa-barcode"></i> Ler QR
+                    <div class="w-full sm:w-auto flex items-center gap-2 pt-1 sm:pt-5">
+                        <button onclick="openEditCurrentMachineModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-pen-to-square text-brand-accent"></i> Editar
+                        </button>
+                        <button onclick="deleteCurrentMachine()" class="flex-1 sm:flex-none bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-trash"></i> Excluir
                         </button>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <section class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">2</span>
-                    Identificação & Código da Fabricante
-                </h3>
-                <div class="flex items-center gap-2">
-                    <select id="tech-clone-select" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-brand-cyan">
-                    </select>
-                    <button type="button" onclick="cloneMachineSpecs()" class="bg-brand-cyan/15 hover:bg-brand-cyan/25 text-brand-cyan border border-brand-cyan/30 font-bold px-3 py-1.5 rounded-xl text-xs transition whitespace-nowrap">
-                        <i class="fa-solid fa-copy mr-1"></i> Clonar Modelo
+                <div class="w-full md:w-auto flex items-center justify-end gap-2">
+                    <button onclick="openNewTechnicalWizard()" class="w-full sm:w-auto bg-gradient-to-r from-brand-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-slate-950 text-sm"></i> Cadastrar Aparelho
                     </button>
                 </div>
             </div>
 
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-xs font-bold text-slate-300">Fabricante / Marca do Equipamento:</label>
-                    <span class="text-[11px] text-slate-400">Selecione ou edite livremente</span>
+            <!-- Machine Display & Interactive Map -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Equipment Info & Interactive Photo (8 Cols) -->
+                <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="machine-category" class="bg-brand-cyan/15 text-brand-cyan font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-brand-cyan/30">Total Health</span>
+                                <span id="machine-brand" class="text-xs font-bold text-slate-400">Total Health</span>
+                                <span id="machine-mfg-code" class="bg-slate-800 text-slate-300 font-mono text-[10px] px-2 py-0.5 rounded-md border border-slate-700">FAB: ---</span>
+                            </div>
+                            <h2 id="machine-name" class="text-xl sm:text-2xl font-black text-white mt-1">Carregando...</h2>
+                        </div>
+                        <div class="text-right">
+                            <span id="machine-code" class="inline-block bg-slate-950 border border-slate-700 text-brand-accent font-mono text-xs font-bold px-3 py-1.5 rounded-xl">#---</span>
+                            <div class="text-[11px] text-slate-400 mt-1" id="machine-last-inspect">Sincronizado</div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Image Canvas -->
+                    <div class="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-inner group" style="min-height: 380px;">
+                        <img id="main-machine-img" src="" alt="Aparelho" class="max-h-[460px] w-auto object-contain select-none" />
+                        <!-- Pins Overlay -->
+                        <div id="pins-container" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 text-center"><i class="fa-solid fa-circle-info mr-1 text-brand-accent"></i> Clique em qualquer ponto da foto acima para adicionar ou inspecionar um estofado nesta máquina.</p>
                 </div>
-                <div id="tech-brand-chips" class="flex flex-wrap gap-2 mb-2.5">
+
+                <!-- Right Column: Parts / Upholstery List (4 Cols) -->
+                <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-brand-accent"></i> Estofados Cadastrados
+                        </h3>
+                        <span id="parts-count-badge" class="bg-slate-800 text-slate-300 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-700">0 Peças</span>
+                    </div>
+
+                    <div id="parts-list-container" class="flex-1 space-y-3 overflow-y-auto max-h-[420px] pr-1">
+                        <!-- Dynamically populated parts -->
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <input type="text" id="tech-brand-input" oninput="updateTechBrandFromInput(this.value)" placeholder="Ou digite/edite o fabricante aqui..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-accent">
-                    <button type="button" onclick="addCustomBrandChip()" class="bg-slate-800 hover:bg-slate-700 text-brand-cyan border border-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs transition whitespace-nowrap">
-                        <i class="fa-solid fa-plus mr-1"></i> Salvar na Lista
+
+            </div>
+
+        </div>
+
+        <!-- ==================== VIEW 2: TECHNICAL REGISTRATION WIZARD ==================== -->
+        <div id="view-tech-wizard" class="hidden max-w-3xl mx-auto space-y-6">
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <span class="text-xs font-bold text-brand-cyan tracking-wider uppercase">Novo Aparelho</span>
+                        <h2 class="text-xl sm:text-2xl font-black text-white">Cadastro Técnico Unificado</h2>
+                    </div>
+                    <button onclick="switchAppMode('manager')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3.5 py-2 rounded-xl text-xs transition border border-slate-700">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Voltar
+                    </button>
+                </div>
+
+                <!-- Step 1: Photo & QR Tag -->
+                <section class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">1</span>
+                        Foto do Aparelho & Código QR
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">Foto do Equipamento:</label>
+                            <input type="file" accept="image/*" onchange="handleTechPhotoUpload(event)" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-accent file:text-slate-950 hover:file:bg-amber-400 cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">Código QR / TAG de Identificação:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="tech-qr-code-input" placeholder="Ex: #EXT-01" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-accent">
+                                <button type="button" onclick="generateRandomTag()" class="bg-slate-800 hover:bg-slate-700 text-brand-accent px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 whitespace-nowrap">Gerar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center" style="min-height: 260px;" id="tech-interactive-canvas-container" onclick="handleTechCanvasClick(event)">
+                        <img id="tech-preview-img" src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80" alt="Preview" class="max-h-72 w-auto object-contain select-none">
+                        <div id="tech-pins-overlay" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+                    <p class="text-[11px] text-brand-accent text-center font-medium"><i class="fa-solid fa-hand-pointer mr-1"></i> Clique na foto acima para posicionar pontos exatos nos estofados que precisam de cadastro.</p>
+                </section>
+
+                <!-- Step 2: Identification & Manufacturer -->
+                <section class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">2</span>
+                            Identificação & Fabricante
+                        </h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">Fabricante / Marca:</label>
+                            <input type="text" id="tech-brand-input" value="Total Health" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-brand-accent" readonly>
+                        </div>
+                        <div>
+                            <label for="tech-manufacturer-code" class="block text-xs font-bold text-brand-accent mb-1.5"><i class="fa-solid fa-barcode mr-1"></i> Código da Fabricante:</label>
+                            <input type="text" id="tech-manufacturer-code" placeholder="Ex: COD-FAB-908" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-brand-accent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="tech-machine-name" class="block text-xs font-bold text-slate-300 mb-1.5">Nome / Modelo do Aparelho:</label>
+                        <input type="text" id="tech-machine-name" placeholder="Ex: Cadeira Extensora Pro" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-accent">
+                    </div>
+                </section>
+
+                <!-- Step 3: Parts & Upholstery Details Config -->
+                <section class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">3</span>
+                        Detalhes dos Estofados Marcados (<span id="tech-pins-count">0</span>)
+                    </h3>
+
+                    <div id="tech-parts-config-container" class="space-y-3">
+                        <p class="text-xs text-slate-500 text-center py-4">Nenhum ponto marcado na foto ainda. Clique na imagem acima para adicionar.</p>
+                    </div>
+                </section>
+
+                <!-- Action Button -->
+                <div class="pt-2">
+                    <button onclick="saveNewTechnicalMachine()" class="w-full bg-brand-accent hover:bg-amber-400 text-slate-950 font-black py-3.5 rounded-2xl transition shadow-xl text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-base"></i> Salvar Aparelho na Nuvem
                     </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label for="tech-manufacturer-code" class="block text-xs font-bold text-brand-accent mb-1.5"><i class="fa-solid fa-barcode mr-1"></i> Código da Fabricante:</label>
-                    <input type="text" id="tech-manufacturer-code" placeholder="Ex: COD-FAB-908" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-brand-accent">
-                </div>
-                <div>
-                    <label for="tech-machine-name" class="block text-xs font-bold text-slate-300 mb-1.5">Nome / Modelo do Aparelho:</label>
-                    <input type="text" id="tech-machine-name" placeholder="Ex: Remada Baixa Articulada" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-accent">
-                </div>
-                <div>
-                    <label for="tech-machine-sector" class="block text-xs font-bold text-slate-300 mb-1.5">Setor na Academia:</label>
-                    <select id="tech-machine-sector" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-accent">
-                        <option value="Membros Inferiores">Membros Inferiores</option>
-                        <option value="Peitoral / Superiores">Peitoral / Superiores</option>
-                        <option value="Costas & Ombros">Costas & Ombros</option>
-                        <option value="Cabos & Polias">Cabos & Polias</option>
-                    </select>
-                </div>
-            </div>
-        </section>
+        </div>
 
-        <section class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
-            <div>
-                <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center">3</span>
-                    Configuração dos Estofados (Revestimento & Fixação)
-                </h3>
-                <p class="text-xs text-slate-400 mt-0.5">Selecione o estofado abaixo para definir a cor e o sistema de fixação.</p>
-            </div>
-
-            <div id="tech-parts-tabs" class="flex flex-wrap gap-2 pb-2 border-b border-slate-800">
-            </div>
-
-            <div id="tech-active-part-form" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
-            </div>
-
-            <div class="pt-3 border-t border-slate-800">
-                <button type="button" onclick="saveNewTechnicalMachine()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-sm sm:text-base transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i> Salvar e Sincronizar na Nuvem
-                </button>
-            </div>
-        </section>
     </main>
 
-    <!-- FOOTER -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500 mt-auto">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>GymUpholstery Cloud &copy; 2026 - Sincronização em Tempo Real</p>
-            <p class="flex items-center gap-3 text-slate-400">
-                <span id="cloud-status"><i class="fa-solid fa-spinner fa-spin text-brand-cyan"></i> Conectando à Nuvem...</span>
-            </p>
-        </div>
-    </footer>
-
-    <!-- MODAL: DETALHES DO ESTOFADO -->
-    <div id="modal-part-detail" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onclick="closePartModal()" class="absolute top-4 right-4 w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- ==================== MODAL: PART DETAIL / WHATSAPP ORDER ==================== -->
+    <div id="modal-part-detail" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
+            <button onclick="closePartModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
             </button>
-            <div id="modal-part-content"></div>
+
+            <div>
+                <span id="modal-part-code" class="text-xs font-mono font-bold text-brand-cyan">#EST-01</span>
+                <h3 id="modal-part-name" class="text-xl font-black text-white mt-0.5">Nome do Estofado</h3>
+            </div>
+
+            <!-- Damage Photo Upload -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-300">Foto Atual do Dano (Opcional):</label>
+                <div class="flex items-center gap-3">
+                    <input type="file" accept="image/*" onchange="handleDamagePhotoUpload(event)" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
+                </div>
+                <div id="modal-damage-preview-container" class="hidden w-full bg-slate-950 rounded-xl overflow-hidden border border-slate-800 p-2 flex items-center justify-center max-h-48">
+                    <img id="modal-damage-preview-img" src="" alt="Preview Dano" class="max-h-40 w-auto object-contain rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <span class="block text-[10px] text-slate-500 uppercase font-bold">Revestimento</span>
+                    <span id="modal-part-vinyl" class="text-xs font-bold text-white">Preto</span>
+                </div>
+                <div>
+                    <span class="block text-[10px] text-slate-500 uppercase font-bold">Fixação</span>
+                    <span id="modal-part-fixing" class="text-xs font-bold text-white">4 Parafusos</span>
+                </div>
+            </div>
+
+            <div>
+                <span class="block text-[10px] text-slate-500 uppercase font-bold mb-1">Observações</span>
+                <p id="modal-part-desc" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">Nenhuma observação.</p>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+                <button id="whatsapp-order-btn" onclick="" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition shadow-lg text-xs flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-base"></i> Enviar Ordem WhatsApp
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL: EDITAR MÁQUINA -->
-    <div id="modal-edit-machine" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onclick="closeEditMachineModal()" class="absolute top-4 right-4 w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- ==================== MODAL: EDIT MACHINE ==================== -->
+    <div id="modal-edit-machine" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative">
+            <button onclick="closeEditMachineModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
             </button>
-            <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-pen-to-square text-brand-cyan mr-2"></i> Editar Equipamento</h3>
-            <div class="space-y-3 text-xs">
+            <h3 class="text-lg font-black text-white">Editar Aparelho</h3>
+            
+            <div class="space-y-3">
                 <div>
-                    <label class="block font-bold text-slate-300 mb-1">Nome do Aparelho:</label>
-                    <input type="text" id="edit-machine-name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Nome do Aparelho:</label>
+                    <input type="text" id="edit-machine-name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-accent">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-300 mb-1">Fabricante / Marca:</label>
-                    <input type="text" id="edit-machine-brand" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Fabricante / Marca:</label>
+                    <input type="text" id="edit-machine-brand" value="Total Health" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-accent" readonly>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-300 mb-1">Código da Fabricante:</label>
-                    <input type="text" id="edit-machine-mfg" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono focus:outline-none focus:border-brand-accent">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-300 mb-1">Setor / Categoria:</label>
-                    <select id="edit-machine-sector" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
-                        <option value="Membros Inferiores">Membros Inferiores</option>
-                        <option value="Peitoral / Superiores">Peitoral / Superiores</option>
-                        <option value="Costas & Ombros">Costas & Ombros</option>
-                        <option value="Cabos & Polias">Cabos & Polias</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Código da Fabricante:</label>
+                    <input type="text" id="edit-machine-mfg" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-brand-accent">
                 </div>
                 <div class="pt-3">
-                    <button onclick="saveEditedMachine()" class="w-full bg-brand-accent text-slate-950 font-bold py-3 rounded-xl transition shadow-lg">Salvar Alterações</button>
+                    <button onclick="saveEditedMachine()" class="w-full bg-brand-accent hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg text-xs">Salvar Alterações</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: QR CODE SCANNER -->
-    <div id="modal-qr-scanner" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-center">
-            <button onclick="closeQRModal()" class="absolute top-4 right-4 w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- ==================== MODAL: MAINTENANCE LOG / ORDERS ==================== -->
+    <div id="modal-maintenance-log" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative max-h-[85vh] flex flex-col">
+            <button onclick="toggleMaintenanceLog()" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
             </button>
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-accent/10 text-brand-accent mb-3 border border-brand-accent/30">
-                <i class="fa-solid fa-qrcode text-2xl"></i>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-black text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-brand-accent"></i> Ordens de Reforma Registradas
+                </h3>
             </div>
-            <h3 class="text-xl font-bold text-white mb-1">Leitor QR Code em Nuvem</h3>
-            <p class="text-xs text-slate-400 mb-4">Selecione uma máquina para inspecionar</p>
-
-            <div id="qr-machines-grid" class="grid grid-cols-2 gap-2 text-left max-h-60 overflow-y-auto"></div>
-        </div>
-    </div>
-
-    <!-- MODAL: PEDIDOS DE REFORMA -->
-    <div id="modal-maintenance-log" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-brand-cyan/10 text-brand-cyan flex items-center justify-center border border-brand-cyan/30">
-                        <i class="fa-solid fa-scissors text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-white">Ordens de Reforma (Sincronizadas)</h3>
-                        <p class="text-xs text-slate-400">Chamados abertos em tempo real pelas academias</p>
-                    </div>
-                </div>
-                <button onclick="toggleMaintenanceLog()" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div id="requests-list-container" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
-
-            <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button onclick="toggleMaintenanceLog()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium text-xs transition">
-                    Fechar
-                </button>
+            <div id="requests-list-container" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <!-- Maintenance requests list -->
             </div>
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
-    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- Application Script Logic -->
     <script>
         let gymDatabase = {};
         let maintenanceRequests = [];
@@ -472,13 +355,11 @@
         let pendingDamagePhotoDataUrl = null;
         let isCloudConnected = false;
 
-        let savedBrandsList = ['Movement', 'Technogym', 'Righetto', 'Life Fitness', 'Hammer Strength'];
         let techDraft = {
             imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80',
             qrCode: '',
-            brand: 'Movement',
+            brand: 'Total Health',
             name: '',
-            sector: 'Membros Inferiores',
             pins: []
         };
         let pendingClickCoords = { x: 50, y: 50 };
@@ -489,11 +370,11 @@
                 id: 'EXTENSORA',
                 code: 'TAG: #EXT-01',
                 name: 'Cadeira Extensora Pro',
-                category: 'Membros Inferiores',
-                location: 'Setor A - Perna',
+                category: 'Total Health',
+                location: 'Total Health - Sede',
                 lastInspect: '12/11/2026',
                 imageUrl: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1000&q=80',
-                brand: 'Movement',
+                brand: 'Total Health',
                 manufacturerCode: 'FAB-EXT-01',
                 parts: [
                     {
@@ -517,119 +398,110 @@
                         description: 'Estofado firme sem marcas.',
                         xPercent: 50,
                         yPercent: 55
-                    },
-                    {
-                        id: 'ext-03',
-                        name: 'Rolete Tornozelo',
-                        code: 'EST-EXT-03',
-                        status: 'replace',
-                        vinylType: 'Laranja',
-                        fixing: 'Encaixe / Pino',
-                        description: 'Espuma rasgada na ponta.',
-                        xPercent: 78,
-                        yPercent: 75
                     }
                 ]
             }
         };
 
-        window.initCloudSync = function() {
-            const { collection, onSnapshot, doc, setDoc } = window.firebaseModules;
-            const db = window.db;
-            const appId = window.appId;
+        window.addEventListener('firebase-loaded', () => {
+            initCloudSync();
+        });
 
-            isCloudConnected = true;
-            const statusEl = document.getElementById('cloud-status');
-            if (statusEl) {
-                statusEl.innerHTML = '<i class="fa-solid fa-circle-nodes text-emerald-400"></i> <span class="text-emerald-400 font-semibold">Conectado à Nuvem</span>';
-            }
+        async function initCloudSync() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyA55ut5MKfguZqBxgflgLr_CZxM_Q0rqY8",
+                authDomain: "reforapp-dd8e1.firebaseapp.com",
+                projectId: "reforapp-dd8e1",
+                storageBucket: "reforapp-dd8e1.firebasestorage.app",
+                messagingSenderId: "148499064385",
+                appId: "1:148499064385:web:074ff818fb7ff8548508c0"
+            };
 
-            const machinesColRef = collection(db, 'artifacts', appId, 'public', 'data', 'gym_machines');
-            const requestsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'gym_requests');
+            try {
+                const { initializeApp, getAuth, signInAnonymously, getFirestore, collection, onSnapshot } = window.firebaseModules;
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                window.db = getFirestore(app);
+                window.appId = "reforapp-main-prod";
 
-            onSnapshot(machinesColRef, (snapshot) => {
-                if (snapshot.empty) {
-                    Object.keys(defaultInitialDb).forEach(async (key) => {
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'gym_machines', key), defaultInitialDb[key]);
-                    });
-                } else {
-                    gymDatabase = {};
+                await signInAnonymously(auth);
+                isCloudConnected = true;
+                document.getElementById('cloud-status-text').innerHTML = '<span class="text-brand-emerald font-bold">Conectado à Nuvem</span>';
+
+                // Listen to machines
+                onSnapshot(collection(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines'), (snapshot) => {
+                    let loaded = {};
                     snapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        gymDatabase[data.id] = data;
+                        loaded[docSnap.id] = docSnap.data();
                     });
-                    if (!currentMachineId || !gymDatabase[currentMachineId]) {
-                        currentMachineId = Object.keys(gymDatabase)[0] || '';
+                    if (Object.keys(loaded).length > 0) {
+                        gymDatabase = loaded;
+                    } else {
+                        gymDatabase = defaultInitialDb;
+                        seedDefaultData();
+                    }
+                    if (!gymDatabase[currentMachineId]) {
+                        currentMachineId = Object.keys(gymDatabase)[0];
                     }
                     populateMachineDropdown();
-                    populateCloneDropdown();
                     renderCurrentMachine();
-                }
-            }, (err) => {
-                console.error(err);
-                initLocalFallback();
-            });
-
-            onSnapshot(requestsColRef, (snapshot) => {
-                maintenanceRequests = [];
-                snapshot.forEach(docSnap => {
-                    maintenanceRequests.push(docSnap.data());
+                }, (error) => {
+                    console.error("Firestore sync error:", error);
+                    fallbackToLocal();
                 });
-                maintenanceRequests.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                updateMaintenanceBadge();
-            }, (err) => {
-                console.error(err);
-            });
-        };
 
-        window.initLocalFallback = function() {
-            if (isCloudConnected) return;
-            document.getElementById('cloud-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> <span class="text-amber-400">Modo Local (Offline)</span>';
-            gymDatabase = defaultInitialDb;
-            currentMachineId = 'EXTENSORA';
-            populateMachineDropdown();
-            populateCloneDropdown();
-            renderCurrentMachine();
-            updateMaintenanceBadge();
-        };
+                // Listen to requests
+                onSnapshot(collection(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_requests'), (snapshot) => {
+                    maintenanceRequests = [];
+                    snapshot.forEach(docSnap => {
+                        maintenanceRequests.push(docSnap.data());
+                    });
+                    updateMaintenanceBadge();
+                    if (!document.getElementById('modal-maintenance-log').classList.contains('hidden')) {
+                        renderMaintenanceRequests();
+                    }
+                });
 
-        window.onload = function() {
-            renderBrandChips();
-            renderTechPinsOverlay();
-            renderTechStep3();
-            setTimeout(() => {
-                if (!isCloudConnected && Object.keys(gymDatabase).length === 0) {
-                    initLocalFallback();
-                }
-            }, 6000);
-        };
-
-        async function saveMachineToCloud(machineObj) {
-            try {
-                const { doc, setDoc } = window.firebaseModules;
-                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines', machineObj.id), machineObj);
-                gymDatabase[machineObj.id] = machineObj;
-                showToast('Máquina salva e sincronizada na nuvem!', 'success');
-                return true;
             } catch (e) {
-                console.error("Erro ao salvar no Firebase:", e);
-                gymDatabase[machineObj.id] = machineObj;
-                showToast(`Aviso: Salvo apenas localmente (${e.code || 'erro na nuvem'}).`, 'info');
-                return false;
+                console.error("Firebase auth error:", e);
+                fallbackToLocal();
             }
         }
 
-        async function saveRequestToCloud(reqObj) {
+        function fallbackToLocal() {
+            isCloudConnected = false;
+            document.getElementById('cloud-status-text').innerHTML = '<span class="text-amber-400 font-bold">Modo Local (Offline)</span>';
+            gymDatabase = defaultInitialDb;
+            currentMachineId = 'EXTENSORA';
+            populateMachineDropdown();
+            renderCurrentMachine();
+        }
+
+        async function seedDefaultData() {
             try {
                 const { doc, setDoc } = window.firebaseModules;
-                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_requests', reqObj.id), reqObj);
+                for (let key in defaultInitialDb) {
+                    await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines', key), defaultInitialDb[key]);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function saveMachineToCloud(machine) {
+            try {
+                const { doc, setDoc } = window.firebaseModules;
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines', machine.id), machine);
+                showToast('Salvo na nuvem com sucesso!', 'success');
             } catch (e) {
-                console.error("Erro ao salvar pedido:", e);
+                console.error(e);
+                gymDatabase[machine.id] = machine;
+                showToast('Salvo localmente.', 'info');
             }
         }
 
         async function deleteMachineFromCloud(machineId) {
             try {
+                const { doc, deleteDoc } = window.firebaseModules;
+                await deleteDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_machines', machineId));
                 delete gymDatabase[machineId];
                 showToast('Equipamento excluído com sucesso!', 'success');
                 const remainingKeys = Object.keys(gymDatabase);
@@ -645,107 +517,36 @@
                 }
             } catch (e) {
                 console.error(e);
+                delete gymDatabase[machineId];
+                showToast('Excluído localmente.', 'info');
+                const remainingKeys = Object.keys(gymDatabase);
+                if (remainingKeys.length > 0) {
+                    currentMachineId = remainingKeys[0];
+                    populateMachineDropdown();
+                    renderCurrentMachine();
+                }
             }
         }
 
-        function openEditCurrentMachineModal() {
-            const machine = gymDatabase[currentMachineId];
-            if (!machine) return;
-            document.getElementById('edit-machine-name').value = machine.name;
-            document.getElementById('edit-machine-brand').value = machine.brand || '';
-            document.getElementById('edit-machine-mfg').value = machine.manufacturerCode || '';
-            document.getElementById('edit-machine-sector').value = machine.category || 'Membros Inferiores';
-            document.getElementById('modal-edit-machine').classList.remove('hidden');
-        }
-
-        function closeEditMachineModal() {
-            document.getElementById('modal-edit-machine').classList.add('hidden');
-        }
-
-        async function saveEditedMachine() {
-            const machine = gymDatabase[currentMachineId];
-            if (!machine) return;
-            machine.name = document.getElementById('edit-machine-name').value.trim() || machine.name;
-            machine.brand = document.getElementById('edit-machine-brand').value.trim() || machine.brand;
-            machine.manufacturerCode = document.getElementById('edit-machine-mfg').value.trim();
-            machine.category = document.getElementById('edit-machine-sector').value;
-
-            await saveMachineToCloud(machine);
-            closeEditMachineModal();
-            populateMachineDropdown();
-            renderCurrentMachine();
-        }
-
-        async function deleteCurrentMachine() {
-            if (Object.keys(gymDatabase).length <= 1) {
-                showToast('Você precisa manter ao menos um equipamento cadastrado.', 'info');
-                return;
-            }
-            if (confirm(`Deseja realmente excluir o aparelho "${gymDatabase[currentMachineId].name}"?`)) {
-                await deleteMachineFromCloud(currentMachineId);
-            }
-        }
-
-        function compressImageFile(file, maxWidth = 900, quality = 0.72) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.onerror = reject;
-                    img.src = event.target.result;
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        async function saveRequestToCloud(reqObj) {
+            maintenanceRequests.push(reqObj);
+            updateMaintenanceBadge();
             try {
-                showToast('Otimizando foto para nuvem...', 'info');
-                const compressedDataUrl = await compressImageFile(file);
-                gymDatabase[currentMachineId].imageUrl = compressedDataUrl;
-                await saveMachineToCloud(gymDatabase[currentMachineId]);
-                renderPhotoAndPins(gymDatabase[currentMachineId]);
-            } catch (err) {
-                console.error(err);
-                showToast('Erro ao processar a foto.', 'info');
-            }
+                const { doc, setDoc } = window.firebaseModules;
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_requests', reqObj.id), reqObj);
+            } catch (e) { console.error(e); }
         }
 
         function populateMachineDropdown() {
-            const select = document.getElementById('machine-select');
-            if (!select) return;
-            select.innerHTML = '';
-            Object.keys(gymDatabase).forEach(key => {
-                const m = gymDatabase[key];
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = `${m.name} (${m.code})`;
-                if (m.id === currentMachineId) opt.selected = true;
-                select.appendChild(opt);
-            });
+            const selector = document.getElementById('machine-selector');
+            if (!selector) return;
+            selector.innerHTML = Object.values(gymDatabase).map(m => `
+                <option value="${m.id}" ${m.id === currentMachineId ? 'selected' : ''}>${m.name} (${m.code})</option>
+            `).join('');
         }
 
-        function changeMachine(machineId) {
-            currentMachineId = machineId;
+        function onMachineDropdownChange(val) {
+            currentMachineId = val;
             renderCurrentMachine();
         }
 
@@ -753,8 +554,8 @@
             const machine = gymDatabase[currentMachineId];
             if (!machine) return;
 
-            document.getElementById('machine-category').textContent = machine.category;
-            document.getElementById('machine-brand').textContent = machine.brand || 'Movement';
+            document.getElementById('machine-category').textContent = machine.category || 'Total Health';
+            document.getElementById('machine-brand').textContent = machine.brand || 'Total Health';
             
             const mfgCodeEl = document.getElementById('machine-mfg-code');
             if (machine.manufacturerCode) {
@@ -766,8 +567,11 @@
 
             document.getElementById('machine-code').textContent = machine.code;
             document.getElementById('machine-name').textContent = machine.name;
-            document.getElementById('machine-location').innerHTML = `<i class="fa-solid fa-location-dot text-slate-500 mr-1"></i> Localização: ${machine.location}`;
-            document.getElementById('machine-last-inspect').innerHTML = `<i class="fa-solid fa-cloud text-brand-cyan mr-1"></i> Sincronizado na Nuvem`;
+            document.getElementById('machine-last-inspect').innerHTML = `<i class="fa-solid fa-cloud text-brand-cyan mr-1"></i> ${isCloudConnected ? 'Nuvem Ativa' : 'Modo Local'}`;
+
+            const mainImg = document.getElementById('main-machine-img');
+            mainImg.src = machine.imageUrl;
+            mainImg.onerror = () => { mainImg.src = 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1000&q=80'; };
 
             renderPhotoAndPins(machine);
             renderPartsList(machine);
@@ -775,108 +579,71 @@
         }
 
         function renderPhotoAndPins(machine) {
-            const container = document.getElementById('photo-container');
-            container.innerHTML = `
-                <img src="${machine.imageUrl}" alt="${machine.name}" class="w-full h-full object-contain">
-            `;
+            const container = document.getElementById('pins-container');
+            if (!container) return;
 
-            machine.parts.forEach((part, idx) => {
-                const colorClass = part.status === 'good' ? 'bg-emerald-500 text-slate-950' : part.status === 'worn' ? 'bg-amber-400 text-slate-950' : 'bg-brand-accent text-slate-950 hotspot-pin';
-                const pinEl = document.createElement('div');
-                pinEl.className = `absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${colorClass} flex items-center justify-center font-black text-xs cursor-pointer shadow-lg border-2 border-white`;
-                pinEl.style.left = `${part.xPercent}%`;
-                pinEl.style.top = `${part.yPercent}%`;
-                pinEl.textContent = idx + 1;
-                pinEl.onclick = () => openPartModalDetail(part.id);
-                container.appendChild(pinEl);
-            });
+            container.innerHTML = machine.parts.map((p, idx) => {
+                let badgeColor = 'bg-brand-emerald text-slate-950 border-emerald-400';
+                if (p.status === 'worn') badgeColor = 'bg-brand-accent text-slate-950 border-amber-400';
+                if (p.status === 'replace') badgeColor = 'bg-brand-rose text-white border-rose-400 pin-pulse';
+
+                return `
+                    <div onclick="openPartModal('${p.id}')" class="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${badgeColor} font-black text-xs flex items-center justify-center shadow-xl border-2 pointer-events-auto hover:scale-125 transition" style="left: ${p.xPercent}%; top: ${p.yPercent}%;" title="${p.name}">
+                        ${idx + 1}
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderPartsList(machine) {
-            const listEl = document.getElementById('parts-list');
-            if (!listEl) return;
+            const container = document.getElementById('parts-list-container');
+            if (!container) return;
 
-            listEl.innerHTML = machine.parts.map((part, idx) => {
-                const statusBadge = part.status === 'good' 
-                    ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">OK</span>'
-                    : part.status === 'worn'
-                    ? '<span class="px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30 text-[10px] font-bold">Desgaste</span>'
-                    : '<span class="px-2 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/30 text-[10px] font-bold">Troca Urgente</span>';
+            if (machine.parts.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Nenhum estofado cadastrado.</p>`;
+                return;
+            }
+
+            container.innerHTML = machine.parts.map((p, idx) => {
+                let statusBadge = '<span class="text-[10px] bg-brand-emerald/10 text-brand-emerald font-bold px-2 py-0.5 rounded-md border border-brand-emerald/30">Bom</span>';
+                if (p.status === 'worn') statusBadge = '<span class="text-[10px] bg-brand-accent/10 text-brand-accent font-bold px-2 py-0.5 rounded-md border border-brand-accent/30">Desgaste</span>';
+                if (p.status === 'replace') statusBadge = '<span class="text-[10px] bg-brand-rose/10 text-brand-rose font-bold px-2 py-0.5 rounded-md border border-brand-rose/30">Troca</span>';
 
                 return `
-                    <div onclick="openPartModalDetail('${part.id}')" class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-black text-brand-accent">
-                                ${idx + 1}
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-white">${part.name}</h4>
-                                <p class="text-[11px] text-slate-400">Revestimento: ${part.vinylType || 'Preto'}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
+                    <div onclick="openPartModal('${p.id}')" class="bg-slate-950 hover:bg-slate-800/80 border border-slate-800 rounded-2xl p-3.5 cursor-pointer transition space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono text-brand-cyan font-bold">#${idx + 1} • ${p.code}</span>
                             ${statusBadge}
-                            <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                        </div>
+                        <h4 class="text-xs font-bold text-white">${p.name}</h4>
+                        <div class="text-[11px] text-slate-400 flex items-center justify-between pt-1">
+                            <span><i class="fa-solid fa-palette mr-1 text-slate-500"></i> ${p.vinylType || 'Preto'}</span>
+                            <span><i class="fa-solid fa-wrench mr-1 text-slate-500"></i> ${p.fixing || '4 Parafusos'}</span>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function openPartModalDetail(partId) {
+        function openPartModal(partId) {
+            currentSelectedPartId = partId;
             const machine = gymDatabase[currentMachineId];
             if (!machine) return;
             const part = machine.parts.find(p => p.id === partId);
             if (!part) return;
 
-            currentSelectedPartId = partId;
+            document.getElementById('modal-part-code').textContent = part.code;
+            document.getElementById('modal-part-name').textContent = part.name;
+            document.getElementById('modal-part-vinyl').textContent = part.vinylType || 'Preto';
+            document.getElementById('modal-part-fixing').textContent = part.fixing || '4 Parafusos';
+            document.getElementById('modal-part-desc').textContent = part.description || 'Nenhuma observação.';
+            
             pendingDamagePhotoDataUrl = null;
+            document.getElementById('modal-damage-preview-container').classList.add('hidden');
 
-            const content = document.getElementById('modal-part-content');
-            content.innerHTML = `
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-brand-cyan bg-brand-cyan/10 px-2.5 py-0.5 rounded-full border border-brand-cyan/20">${machine.name}</span>
-                        <span class="text-xs font-mono text-slate-400">TAG: ${part.code}</span>
-                    </div>
-                    <h3 class="text-xl font-black text-white">${part.name}</h3>
-                    <p class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">${part.description || 'Nenhum detalhe adicional.'}</p>
-                    
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                            <span class="block text-slate-400 mb-1 font-medium">Revestimento:</span>
-                            <span class="font-bold text-white">${part.vinylType || 'Preto'}</span>
-                        </div>
-                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                            <span class="block text-slate-400 mb-1 font-medium">Fixação:</span>
-                            <span class="font-bold text-white">${part.fixing || '4 Parafusos'}</span>
-                        </div>
-                    </div>
+            const btn = document.getElementById('whatsapp-order-btn');
+            btn.setAttribute('onclick', `sendWhatsAppOrder('${partId}')`);
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-2">Alterar Status do Estofado:</label>
-                        <div class="grid grid-cols-3 gap-2 text-xs">
-                            <button onclick="updatePartStatus('${partId}', 'good')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'good' ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'bg-slate-950 text-emerald-400 border-slate-800'}">OK</button>
-                            <button onclick="updatePartStatus('${partId}', 'worn')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'worn' ? 'bg-amber-400 text-slate-950 border-amber-400' : 'bg-slate-950 text-amber-400 border-slate-800'}">Desgaste</button>
-                            <button onclick="updatePartStatus('${partId}', 'replace')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'replace' ? 'bg-brand-accent text-slate-950 border-brand-accent' : 'bg-slate-950 text-brand-accent border-slate-800'}">Troca</button>
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-800 space-y-3">
-                        <label class="block text-xs font-bold text-slate-300">Solicitar Reforma / Orçamento via WhatsApp:</label>
-                        <div class="flex gap-2">
-                            <label class="flex-1 cursor-pointer bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition">
-                                <i class="fa-solid fa-camera text-brand-accent"></i> Foto do Dano
-                                <input type="file" accept="image/*" class="hidden" onchange="handleDamagePhoto(event)">
-                            </label>
-                            <button onclick="sendWhatsAppOrder('${partId}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-                                <i class="fa-brands fa-whatsapp text-sm"></i> Enviar WhatsApp
-                            </button>
-                        </div>
-                        <div id="damage-preview-container" class="hidden"></div>
-                    </div>
-                </div>
-            `;
             document.getElementById('modal-part-detail').classList.remove('hidden');
         }
 
@@ -884,37 +651,17 @@
             document.getElementById('modal-part-detail').classList.add('hidden');
         }
 
-        async function updatePartStatus(partId, newStatus) {
-            const machine = gymDatabase[currentMachineId];
-            if (!machine) return;
-            const part = machine.parts.find(p => p.id === partId);
-            if (!part) return;
-
-            part.status = newStatus;
-            await saveMachineToCloud(machine);
-            renderCurrentMachine();
-            openPartModalDetail(partId);
-            showToast('Status do estofado atualizado!', 'success');
-        }
-
-        async function handleDamagePhoto(event) {
+        function handleDamagePhotoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            try {
-                showToast('Otimizando foto do dano...', 'info');
-                pendingDamagePhotoDataUrl = await compressImageFile(file, 800, 0.7);
-                const container = document.getElementById('damage-preview-container');
-                container.classList.remove('hidden');
-                container.innerHTML = `
-                    <div class="w-full bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-center">
-                        <img src="${pendingDamagePhotoDataUrl}" alt="Dano" class="max-h-36 w-auto object-contain rounded-lg">
-                    </div>
-                `;
-                showToast('Foto do dano anexada!', 'success');
-            } catch (err) {
-                console.error(err);
-                showToast('Erro ao anexar foto.', 'info');
-            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pendingDamagePhotoDataUrl = e.target.result;
+                const prev = document.getElementById('modal-damage-preview-img');
+                prev.src = pendingDamagePhotoDataUrl;
+                document.getElementById('modal-damage-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
         }
 
         async function sendWhatsAppOrder(partId) {
@@ -923,7 +670,7 @@
             const part = machine.parts.find(p => p.id === partId);
             if (!part) return;
 
-            const orderId = `REQ-${Math.floor(1000 + Math.random() * 9000)}` ;
+            const orderId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
             const requestObj = {
                 id: orderId,
                 machineId: machine.id,
@@ -932,6 +679,7 @@
                 notes: `Revestimento: ${part.vinylType || 'Preto'} | Fixação: ${part.fixing || '4 Parafusos'}`,
                 photoUrl: pendingDamagePhotoDataUrl || machine.imageUrl,
                 status: 'Aberto',
+                repaired: false,
                 date: new Date().toLocaleString('pt-BR')
             };
 
@@ -945,11 +693,26 @@
                         `📌 Fixação: *${part.fixing || '4 Parafusos'}*%0A` +
                         `📅 Data: ${requestObj.date}`;
 
-            const phone = "5531999999999"; // Substitua pelo número do tapeceiro se desejar
+            const phone = "5531999999999";
             const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
             window.open(whatsappUrl, '_blank');
             closePartModal();
             showToast('Ordem de reforma registrada na nuvem!', 'success');
+        }
+
+        async function toggleOrderRepaired(requestId) {
+            const req = maintenanceRequests.find(r => r.id === requestId);
+            if (!req) return;
+            req.repaired = !req.repaired;
+            req.status = req.repaired ? 'Reparado' : 'Aberto';
+            try {
+                const { doc, setDoc } = window.firebaseModules;
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'gym_requests', req.id), req);
+                renderMaintenanceRequests();
+                showToast(req.repaired ? 'Marcado como Reparado!' : 'Marcado como Pendente', 'success');
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function toggleMaintenanceLog() {
@@ -965,7 +728,8 @@
         function updateMaintenanceBadge() {
             const badge = document.getElementById('badge-requests-count');
             if (badge) {
-                badge.textContent = maintenanceRequests.length;
+                const pendingCount = maintenanceRequests.filter(r => !r.repaired).length;
+                badge.textContent = pendingCount;
             }
         }
 
@@ -978,262 +742,172 @@
                 return;
             }
 
-            container.innerHTML = maintenanceRequests.map(req => `
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-xs font-mono font-bold text-brand-accent">${req.id}</span>
-                        <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30">${req.status}</span>
-                    </div>
-                    <h4 class="text-sm font-bold text-white">${req.partName} <span class="text-xs font-normal text-slate-400">(${req.machineName})</span></h4>
-                    <p class="text-xs text-slate-400">${req.notes}</p>
-                    ${req.photoUrl ? `
-                        <div class="w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800 mt-2 flex items-center justify-center p-2">
-                            <img src="${req.photoUrl}" alt="Foto Completa do Dano" class="max-h-64 w-auto object-contain rounded-lg">
+            container.innerHTML = maintenanceRequests.map(req => {
+                const isRepaired = req.repaired;
+                return `
+                    <div class="bg-slate-950 border ${isRepaired ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-mono font-bold text-brand-accent">${req.id}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isRepaired ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/30'}">${isRepaired ? 'Reparado' : 'Pendente'}</span>
+                                <button onclick="toggleOrderRepaired('${req.id}')" class="text-xs px-2.5 py-1 rounded-lg font-bold border transition ${isRepaired ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500'}">
+                                    ${isRepaired ? 'Desfazer' : 'Marcar Reparado'}
+                                </button>
+                            </div>
                         </div>
-                    ` : ''}
-                    <div class="text-[11px] text-slate-500 pt-1">Data: ${req.date}</div>
-                </div>
-            `).join('');
+                        <h4 class="text-sm font-bold text-white">${req.partName} <span class="text-xs font-normal text-slate-400">(${req.machineName})</span></h4>
+                        <p class="text-xs text-slate-400">${req.notes}</p>
+                        ${req.photoUrl ? `
+                            <div class="w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800 mt-2 flex items-center justify-center p-2">
+                                <img src="${req.photoUrl}" alt="Foto Completa do Dano" class="max-h-64 w-auto object-contain rounded-lg">
+                            </div>
+                        ` : ''}
+                        <div class="text-[11px] text-slate-500 pt-1">Data: ${req.date}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function switchAppMode(mode) {
-            const viewManager = document.getElementById('view-manager');
-            const viewTech = document.getElementById('view-tech');
-            const btnManager = document.getElementById('btn-mode-manager');
-            const btnTech = document.getElementById('btn-mode-tech');
+            const viewMgr = document.getElementById('view-manager');
+            const viewTech = document.getElementById('view-tech-wizard');
+            const modeBtnText = document.getElementById('mode-btn-text');
 
-            if (mode === 'manager') {
-                viewManager.classList.remove('hidden');
-                viewTech.classList.add('hidden');
-                btnManager.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-brand-accent text-slate-950 shadow';
-                btnTech.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white';
-            } else {
-                viewManager.classList.add('hidden');
+            if (mode === 'tech') {
+                viewMgr.classList.add('hidden');
                 viewTech.classList.remove('hidden');
-                btnTech.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition bg-brand-accent text-slate-950 shadow';
-                btnManager.className = 'flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white';
-                renderBrandChips();
-                renderTechPinsOverlay();
-                renderTechStep3();
-                populateCloneDropdown();
+                modeBtnText.textContent = 'Modo Gerente';
+                document.getElementById('mode-toggle-btn').setAttribute('onclick', "switchAppMode('manager')");
+                resetTechWizard(false);
+            } else {
+                viewTech.classList.add('hidden');
+                viewMgr.classList.remove('hidden');
+                modeBtnText.textContent = 'Modo Gerente';
+                document.getElementById('mode-toggle-btn').setAttribute('onclick', "switchAppMode('tech')");
+                renderCurrentMachine();
             }
         }
 
-        async function handleTechPhotoUpload(event) {
+        function toggleAppMode() {
+            const viewTech = document.getElementById('view-tech-wizard');
+            if (viewTech.classList.contains('hidden')) {
+                switchAppMode('tech');
+            } else {
+                switchAppMode('manager');
+            }
+        }
+
+        function openNewTechnicalWizard() {
+            switchAppMode('tech');
+        }
+
+        function handleTechPhotoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            try {
-                showToast('Otimizando foto para nuvem...', 'info');
-                techDraft.imageUrl = await compressImageFile(file);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                techDraft.imageUrl = e.target.result;
                 document.getElementById('tech-preview-img').src = techDraft.imageUrl;
-                showToast('Foto carregada e otimizada!', 'success');
-            } catch (err) {
-                console.error(err);
-                showToast('Erro ao carregar foto.', 'info');
-            }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function generateRandomTag() {
+            document.getElementById('tech-qr-code-input').value = `TAG: #CAP-${Math.floor(100 + Math.random() * 899)}`;
         }
 
         function handleTechCanvasClick(event) {
-            const canvas = document.getElementById('tech-photo-canvas');
-            const rect = canvas.getBoundingClientRect();
-            const xPercent = Math.round(((event.clientX - rect.left) / rect.width) * 100);
-            const yPercent = Math.round(((event.clientY - rect.top) / rect.height) * 100);
+            const rect = event.currentTarget.getBoundingClientRect();
+            const xClick = event.clientX - rect.left;
+            const yClick = event.clientY - rect.top;
 
-            pendingClickCoords = {
-                x: Math.max(5, Math.min(95, xPercent)),
-                y: Math.max(5, Math.min(95, yPercent))
-            };
+            const xPercent = Math.round((xClick / rect.width) * 100);
+            const yPercent = Math.round((yClick / rect.height) * 100);
 
-            const popover = document.getElementById('tech-quick-pin-popover');
-            popover.style.left = `${Math.max(25, Math.min(75, pendingClickCoords.x))}%`;
-            popover.style.top = `${Math.max(25, Math.min(75, pendingClickCoords.y))}%`;
-            document.getElementById('tech-custom-pin-name').value = '';
-            popover.classList.remove('hidden');
-        }
-
-        function cancelQuickPin() {
-            document.getElementById('tech-quick-pin-popover').classList.add('hidden');
-        }
-
-        function confirmQuickPin(padName) {
-            const cleanName = (padName || 'Estofado').trim();
             const newPin = {
-                id: `pin-${Date.now()}`,
-                name: cleanName,
-                xPercent: pendingClickCoords.x,
-                yPercent: pendingClickCoords.y,
+                name: `Estofado ${techDraft.pins.length + 1}`,
                 vinyl: 'Preto',
-                fixingType: '4 Parafusos'
+                fixingType: '4 Parafusos',
+                xPercent: xPercent,
+                yPercent: yPercent
             };
 
             techDraft.pins.push(newPin);
-            activeTechPartIndex = techDraft.pins.length - 1;
-            cancelQuickPin();
             renderTechPinsOverlay();
             renderTechStep3();
-            showToast(`Marcador "${cleanName}" adicionado!`, 'success');
-        }
-
-        function removeTechPin(index) {
-            techDraft.pins.splice(index, 1);
-            if (activeTechPartIndex >= techDraft.pins.length) {
-                activeTechPartIndex = Math.max(0, techDraft.pins.length - 1);
-            }
-            renderTechPinsOverlay();
-            renderTechStep3();
+            showToast('Ponto de estofado adicionado!', 'success');
         }
 
         function renderTechPinsOverlay() {
             const overlay = document.getElementById('tech-pins-overlay');
-            const chipsContainer = document.getElementById('tech-pins-chips');
-            document.getElementById('tech-pin-count').textContent = techDraft.pins.length;
-
+            if (!overlay) return;
             overlay.innerHTML = techDraft.pins.map((pin, idx) => `
-                <div style="left: ${pin.xPercent}%; top: ${pin.yPercent}%;" class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                    <div class="w-8 h-8 rounded-full bg-brand-accent text-slate-950 border-2 border-white shadow-xl flex items-center justify-center font-black text-xs">
-                        ${idx + 1}
-                    </div>
+                <div class="absolute transform -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-brand-accent text-slate-950 font-black text-xs flex items-center justify-center shadow-lg border-2 border-amber-300 pointer-events-none" style="left: ${pin.xPercent}%; top: ${pin.yPercent}%;">
+                    ${idx + 1}
                 </div>
             `).join('');
-
-            if (techDraft.pins.length === 0) {
-                chipsContainer.innerHTML = `<span class="text-xs text-slate-500 italic">Nenhum estofado marcado ainda...</span>`;
-                return;
-            }
-
-            chipsContainer.innerHTML = techDraft.pins.map((pin, idx) => `
-                <span class="inline-flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl">
-                    <span class="w-5 h-5 rounded-full bg-brand-accent text-slate-950 font-black text-[10px] flex items-center justify-center">${idx + 1}</span>
-                    ${pin.name}
-                    <button type="button" onclick="removeTechPin(${idx})" class="text-slate-500 hover:text-brand-danger ml-1"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
-                </span>
-            `).join('');
-        }
-
-        function simulateTechQRScan() {
-            const randomTag = `#CAP-${Math.floor(100 + Math.random() * 899)}`;
-            document.getElementById('tech-qr-code-input').value = randomTag;
-            techDraft.qrCode = randomTag;
-            showToast(`Etiqueta ${randomTag} gerada!`, 'success');
-        }
-
-        function renderBrandChips() {
-            const container = document.getElementById('tech-brand-chips');
-            if (!container) return;
-            container.innerHTML = savedBrandsList.map(brandName => {
-                const isSelected = techDraft.brand === brandName;
-                const style = isSelected
-                    ? 'border-brand-accent bg-brand-accent text-slate-950 font-bold'
-                    : 'border-slate-700 bg-slate-950 text-slate-300 font-semibold hover:border-slate-500';
-                return `
-                    <button type="button" onclick="selectTechBrand('${brandName}')" class="brand-chip px-3.5 py-2 rounded-xl border text-xs transition ${style}">
-                        ${brandName}
-                    </button>
-                `;
-            }).join('');
-        }
-
-        function selectTechBrand(brandName) {
-            techDraft.brand = brandName;
-            renderBrandChips();
-        }
-
-        function updateTechBrandFromInput(val) {
-            techDraft.brand = val.trim();
-        }
-
-        function addCustomBrandChip() {
-            const input = document.getElementById('tech-brand-input');
-            const newBrand = input.value.trim();
-            if (!newBrand) return;
-            if (!savedBrandsList.includes(newBrand)) savedBrandsList.push(newBrand);
-            selectTechBrand(newBrand);
-            input.value = '';
-            showToast(`Fabricante "${newBrand}" salvo!`, 'success');
-        }
-
-        function populateCloneDropdown() {
-            const cloneSelect = document.getElementById('tech-clone-select');
-            if (!cloneSelect) return;
-            cloneSelect.innerHTML = '';
-            Object.keys(gymDatabase).forEach(key => {
-                const m = gymDatabase[key];
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = `${m.name} (${m.brand || 'Padrão'})`;
-                cloneSelect.appendChild(opt);
-            });
-        }
-
-        function cloneMachineSpecs() {
-            const sourceId = document.getElementById('tech-clone-select').value;
-            const source = gymDatabase[sourceId];
-            if (!source) return;
-
-            document.getElementById('tech-machine-name').value = `${source.name} (Cópia)`;
-            document.getElementById('tech-machine-sector').value = source.category;
-            if (source.brand) selectTechBrand(source.brand);
-            showToast(`Ficha clonada de "${source.name}"!`, 'success');
-        }
-
-        function selectTechPartTab(index) {
-            activeTechPartIndex = index;
-            renderTechStep3();
-        }
-
-        function updateTechPinField(field, value, rerender = false) {
-            const pin = techDraft.pins[activeTechPartIndex];
-            if (!pin) return;
-            pin[field] = value;
-            if (rerender) renderTechStep3();
+            document.getElementById('tech-pins-count').textContent = techDraft.pins.length;
         }
 
         function renderTechStep3() {
-            const tabsContainer = document.getElementById('tech-parts-tabs');
-            const formContainer = document.getElementById('tech-active-part-form');
-            if (!tabsContainer || !formContainer) return;
+            const container = document.getElementById('tech-parts-config-container');
+            if (!container) return;
 
             if (techDraft.pins.length === 0) {
-                tabsContainer.innerHTML = `<span class="text-xs text-slate-500 italic">Nenhum estofado marcado ainda...</span>`;
-                formContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Toque na foto para marcar um estofado e configurar o revestimento.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Nenhum ponto marcado na foto ainda. Clique na imagem acima para adicionar.</p>`;
                 return;
             }
 
-            tabsContainer.innerHTML = techDraft.pins.map((pin, idx) => {
-                const isActive = idx === activeTechPartIndex;
-                const style = isActive ? 'bg-brand-accent text-slate-950 font-black' : 'bg-slate-950 text-slate-300';
-                return `
-                    <button type="button" onclick="selectTechPartTab(${idx})" class="px-3.5 py-2 rounded-xl border border-slate-800 text-xs transition ${style}">
-                        #${idx + 1} ${pin.name}
-                    </button>
-                `;
-            }).join('');
-
-            const pin = techDraft.pins[activeTechPartIndex];
-            if (!pin) return;
-
-            const vinylOptions = ['Preto', 'Laranja', 'Marrom'];
-
-            formContainer.innerHTML = `
-                <h4 class="text-sm font-extrabold text-white">Configurar: ${pin.name}</h4>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-2">Revestimento:</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        ${vinylOptions.map(v => `
-                            <button type="button" onclick="updateTechPinField('vinyl', '${v}', true)" class="px-3 py-2 rounded-xl border text-xs font-bold transition ${pin.vinyl === v ? 'bg-brand-accent text-slate-950 border-brand-accent' : 'bg-slate-900 text-slate-300 border-slate-700'}">
-                                ${v}
-                            </button>
-                        `).join('')}
+            container.innerHTML = techDraft.pins.map((pin, idx) => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-brand-accent">Estofado #${idx + 1} (Posição: ${pin.xPercent}%, ${pin.yPercent}%)</span>
+                        <button type="button" onclick="removeTechPin(${idx})" class="text-rose-400 hover:text-rose-300 text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i> Remover</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Nome da Peça:</label>
+                            <input type="text" value="${pin.name}" oninput="updateTechPinField(${idx}, 'name', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-accent">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Revestimento:</label>
+                            <select onchange="updateTechPinField(${idx}, 'vinyl', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-accent">
+                                <option value="Preto" ${pin.vinyl === 'Preto' ? 'selected' : ''}>Preto</option>
+                                <option value="Laranja" ${pin.vinyl === 'Laranja' ? 'selected' : ''}>Laranja</option>
+                                <option value="Azul" ${pin.vinyl === 'Azul' ? 'selected' : ''}>Azul</option>
+                                <option value="Vermelho" ${pin.vinyl === 'Vermelho' ? 'selected' : ''}>Vermelho</option>
+                                <option value="Cinza" ${pin.vinyl === 'Cinza' ? 'selected' : ''}>Cinza</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Fixação:</label>
+                            <select onchange="updateTechPinField(${idx}, 'fixingType', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-accent">
+                                <option value="4 Parafusos" ${pin.fixingType === '4 Parafusos' ? 'selected' : ''}>4 Parafusos</option>
+                                <option value="Encaixe / Pino" ${pin.fixingType === 'Encaixe / Pino' ? 'selected' : ''}>Encaixe / Pino</option>
+                                <option value="Gramqueado" ${pin.fixingType === 'Gramqueado' ? 'selected' : ''}>Gramqueado</option>
+                                <option value="Velcro" ${pin.fixingType === 'Velcro' ? 'selected' : ''}>Velcro</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            `;
+            `).join('');
+        }
+
+        function updateTechPinField(idx, field, value) {
+            if (techDraft.pins[idx]) {
+                techDraft.pins[idx][field] = value;
+            }
+        }
+
+        function removeTechPin(idx) {
+            techDraft.pins.splice(idx, 1);
+            renderTechPinsOverlay();
+            renderTechStep3();
         }
 
         async function saveNewTechnicalMachine() {
             const machineName = document.getElementById('tech-machine-name').value.trim();
-            const sector = document.getElementById('tech-machine-sector').value;
             const rawQr = document.getElementById('tech-qr-code-input').value.trim();
-            const brandValue = techDraft.brand || 'Movement';
             const manufacturerCode = document.getElementById('tech-manufacturer-code').value.trim();
 
             if (!machineName) {
@@ -1263,11 +937,11 @@
             const newMachine = {
                 id: newId,
                 code: formattedTag,
-                brand: brandValue,
+                brand: 'Total Health',
                 manufacturerCode: manufacturerCode,
                 name: machineName,
-                category: sector,
-                location: `${sector} - Nuvem`,
+                category: 'Total Health',
+                location: 'Total Health - Nuvem',
                 lastInspect: new Date().toLocaleDateString('pt-BR'),
                 imageUrl: techDraft.imageUrl,
                 parts: newParts
@@ -1285,9 +959,8 @@
             techDraft = {
                 imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80',
                 qrCode: '',
-                brand: 'Movement',
+                brand: 'Total Health',
                 name: '',
-                sector: 'Membros Inferiores',
                 pins: []
             };
             const nameInput = document.getElementById('tech-machine-name');
@@ -1305,33 +978,62 @@
             if (notify) showToast('Formulário limpo.', 'info');
         }
 
-        function showToast(message, type = 'info') {
+        function openEditCurrentMachineModal() {
+            const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
+            document.getElementById('edit-machine-name').value = machine.name;
+            document.getElementById('edit-machine-mfg').value = machine.manufacturerCode || '';
+            document.getElementById('modal-edit-machine').classList.remove('hidden');
+        }
+
+        function closeEditMachineModal() {
+            document.getElementById('modal-edit-machine').classList.add('hidden');
+        }
+
+        async function saveEditedMachine() {
+            const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
+            machine.name = document.getElementById('edit-machine-name').value.trim() || machine.name;
+            machine.brand = 'Total Health';
+            machine.manufacturerCode = document.getElementById('edit-machine-mfg').value.trim();
+            machine.category = 'Total Health';
+
+            await saveMachineToCloud(machine);
+            closeEditMachineModal();
+            populateMachineDropdown();
+            renderCurrentMachine();
+        }
+
+        async function deleteCurrentMachine() {
+            if (Object.keys(gymDatabase).length <= 1) {
+                showToast('Você precisa manter ao menos um equipamento cadastrado.', 'info');
+                return;
+            }
+            if (confirm(`Deseja realmente excluir o aparelho "${gymDatabase[currentMachineId].name}"?`)) {
+                await deleteMachineFromCloud(currentMachineId);
+            }
+        }
+
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if (!container) return;
             const toast = document.createElement('div');
-            toast.className = `p-4 rounded-2xl border shadow-2xl bg-slate-900 ${type === 'success' ? 'border-emerald-500 text-white' : 'border-brand-accent text-white'} flex items-center gap-3 text-xs sm:text-sm font-medium`;
-            toast.innerHTML = `<i class="fa-solid fa-cloud text-brand-accent text-lg"></i><span>${message}</span>`;
+            let bgClass = 'bg-slate-900 border-slate-700 text-white';
+            if (type === 'success') bgClass = 'bg-emerald-950/90 border-emerald-500/40 text-emerald-300';
+            if (type === 'info') bgClass = 'bg-blue-950/90 border-blue-500/40 text-blue-300';
+
+            toast.className = `pointer-events-auto border ${bgClass} px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-300`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-brand-accent"></i> ${message}`;
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
 
-        function openQRModal() {
-            const grid = document.getElementById('qr-machines-grid');
-            if (!grid) return;
-            grid.innerHTML = Object.keys(gymDatabase).map(key => {
-                const m = gymDatabase[key];
-                return `
-                    <button onclick="changeMachine('${m.id}'); closeQRModal();" class="p-3 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left transition">
-                        <span class="block text-xs font-bold text-white truncate">${m.name}</span>
-                        <span class="text-[10px] text-brand-accent font-mono">${m.code}</span>
-                    </button>
-                `;
-            }).join('');
-            document.getElementById('modal-qr-scanner').classList.remove('hidden');
-        }
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
 
-        function closeQRModal() {
-            document.getElementById('modal-qr-scanner').classList.add('hidden');
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
     </script>
 </body>
