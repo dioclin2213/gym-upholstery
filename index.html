@@ -44,8 +44,13 @@
 
         async function initFirebaseAuth() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && __initial_auth_token.trim() !== '') {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (customErr) {
+                        console.warn("Custom token falhou, tentando login anônimo padrão:", customErr);
+                        await signInAnonymously(auth);
+                    }
                 } else {
                     await signInAnonymously(auth);
                 }
@@ -1041,4 +1046,197 @@
             container.innerHTML = savedBrandsList.map(brandName => {
                 const isSelected = techDraft.brand === brandName;
                 const style = isSelected
-                    ?
+                    ? 'border-brand-accent bg-brand-accent text-slate-950 font-bold'
+                    : 'border-slate-700 bg-slate-950 text-slate-300 font-semibold hover:border-slate-500';
+                return `
+                    <button type="button" onclick="selectTechBrand('${brandName}')" class="brand-chip px-3.5 py-2 rounded-xl border text-xs transition ${style}">
+                        ${brandName}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectTechBrand(brandName) {
+            techDraft.brand = brandName;
+            renderBrandChips();
+        }
+
+        function updateTechBrandFromInput(val) {
+            techDraft.brand = val.trim();
+        }
+
+        function addCustomBrandChip() {
+            const input = document.getElementById('tech-brand-input');
+            const newBrand = input.value.trim();
+            if (!newBrand) return;
+            if (!savedBrandsList.includes(newBrand)) savedBrandsList.push(newBrand);
+            selectTechBrand(newBrand);
+            input.value = '';
+            showToast(`Fabricante "${newBrand}" salvo!`, 'success');
+        }
+
+        function populateCloneDropdown() {
+            const cloneSelect = document.getElementById('tech-clone-select');
+            if (!cloneSelect) return;
+            cloneSelect.innerHTML = '';
+            Object.keys(gymDatabase).forEach(key => {
+                const m = gymDatabase[key];
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.name} (${m.brand || 'Padrão'})`;
+                cloneSelect.appendChild(opt);
+            });
+        }
+
+        function cloneMachineSpecs() {
+            const sourceId = document.getElementById('tech-clone-select').value;
+            const source = gymDatabase[sourceId];
+            if (!source) return;
+
+            document.getElementById('tech-machine-name').value = `${source.name} (Cópia)`;
+            document.getElementById('tech-machine-sector').value = source.category;
+            if (source.brand) selectTechBrand(source.brand);
+            showToast(`Ficha clonada de "${source.name}"!`, 'success');
+        }
+
+        function selectTechPartTab(index) {
+            activeTechPartIndex = index;
+            renderTechStep3();
+        }
+
+        function updateTechPinField(field, value, rerender = false) {
+            const pin = techDraft.pins[activeTechPartIndex];
+            if (!pin) return;
+            pin[field] = value;
+            if (rerender) renderTechStep3();
+        }
+
+        function renderTechStep3() {
+            const tabsContainer = document.getElementById('tech-parts-tabs');
+            const formContainer = document.getElementById('tech-active-part-form');
+            if (!tabsContainer || !formContainer) return;
+
+            if (techDraft.pins.length === 0) {
+                tabsContainer.innerHTML = `<span class="text-xs text-slate-500 italic">Nenhum estofado marcado ainda...</span>`;
+                formContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Toque na foto para marcar um estofado e configurar o revestimento.</p>`;
+                return;
+            }
+
+            tabsContainer.innerHTML = techDraft.pins.map((pin, idx) => {
+                const isActive = idx === activeTechPartIndex;
+                const style = isActive ? 'bg-brand-accent text-slate-950 font-black' : 'bg-slate-950 text-slate-300';
+                return `
+                    <button type="button" onclick="selectTechPartTab(${idx})" class="px-3.5 py-2 rounded-xl border border-slate-800 text-xs transition ${style}">
+                        #${idx + 1} ${pin.name}
+                    </button>
+                `;
+            }).join('');
+
+            const pin = techDraft.pins[activeTechPartIndex];
+            if (!pin) return;
+
+            const vinylOptions = ['Preto', 'Laranja', 'Marrom'];
+
+            formContainer.innerHTML = `
+                <h4 class="text-sm font-extrabold text-white">Configurar: ${pin.name}</h4>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-2">Revestimento:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        ${vinylOptions.map(v => `
+                            <button type="button" onclick="updateTechPinField('vinyl', '${v}', true)" class="px-3 py-2 rounded-xl border text-xs font-bold transition ${pin.vinyl === v ? 'bg-brand-accent text-slate-950 border-brand-accent' : 'bg-slate-900 text-slate-300 border-slate-700'}">
+                                ${v}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveNewTechnicalMachine() {
+            const machineName = document.getElementById('tech-machine-name').value.trim();
+            const sector = document.getElementById('tech-machine-sector').value;
+            const rawQr = document.getElementById('tech-qr-code-input').value.trim();
+            const brandValue = techDraft.brand || 'Movement';
+            const manufacturerCode = document.getElementById('tech-manufacturer-code').value.trim();
+
+            if (!machineName) {
+                showToast('Informe o nome do aparelho!', 'info');
+                return;
+            }
+            if (techDraft.pins.length === 0) {
+                showToast('Marque pelo menos 1 estofado na foto!', 'info');
+                return;
+            }
+
+            const newId = `MACHINE_${Date.now()}`;
+            const formattedTag = rawQr ? (rawQr.startsWith('TAG:') ? rawQr : `TAG: ${rawQr}`) : `TAG: #CAP-${Math.floor(100 + Math.random() * 899)}`;
+
+            const newParts = techDraft.pins.map((pin, idx) => ({
+                id: `${newId}-p${idx + 1}`,
+                name: pin.name,
+                code: manufacturerCode ? `${manufacturerCode}-0${idx + 1}` : `EST-${idx + 1}`,
+                status: 'good',
+                vinylType: pin.vinyl || 'Preto',
+                fixing: pin.fixingType || '4 Parafusos',
+                description: `Revestimento: ${pin.vinyl || 'Preto'} | Fixação: ${pin.fixingType || '4 Parafusos'}.`,
+                xPercent: pin.xPercent,
+                yPercent: pin.yPercent
+            }));
+
+            const newMachine = {
+                id: newId,
+                code: formattedTag,
+                brand: brandValue,
+                manufacturerCode: manufacturerCode,
+                name: machineName,
+                category: sector,
+                location: `${sector} - Nuvem`,
+                lastInspect: new Date().toLocaleDateString('pt-BR'),
+                imageUrl: techDraft.imageUrl,
+                parts: newParts
+            };
+
+            showToast('Enviando cadastro para a nuvem...', 'info');
+            await saveMachineToCloud(newMachine);
+            resetTechWizard(false);
+            currentMachineId = newId;
+            populateMachineDropdown();
+            switchAppMode('manager');
+        }
+
+        function resetTechWizard(notify = true) {
+            techDraft = {
+                imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80',
+                qrCode: '',
+                brand: 'Movement',
+                name: '',
+                sector: 'Membros Inferiores',
+                pins: []
+            };
+            const nameInput = document.getElementById('tech-machine-name');
+            const mfgInput = document.getElementById('tech-manufacturer-code');
+            const qrInput = document.getElementById('tech-qr-code-input');
+            const previewImg = document.getElementById('tech-preview-img');
+            if (nameInput) nameInput.value = '';
+            if (mfgInput) mfgInput.value = '';
+            if (qrInput) qrInput.value = '';
+            if (previewImg) previewImg.src = techDraft.imageUrl;
+
+            activeTechPartIndex = 0;
+            renderTechPinsOverlay();
+            renderTechStep3();
+            if (notify) showToast('Formulário limpo.', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-2xl border shadow-2xl bg-slate-900 ${type === 'success' ? 'border-emerald-500 text-white' : 'border-brand-accent text-white'} flex items-center gap-3 text-xs sm:text-sm font-medium`;
+            toast.innerHTML = `<i class="fa-solid fa-cloud text-brand-accent text-lg"><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+    </script>
+</body>
+</html>
