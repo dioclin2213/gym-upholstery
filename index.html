@@ -166,10 +166,18 @@
                     <select id="machine-select" onchange="changeMachine(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-accent">
                     </select>
                 </div>
-                <label for="machine-photo-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 self-end">
-                    <i class="fa-solid fa-camera text-brand-accent"></i> Trocar Foto
-                    <input type="file" id="machine-photo-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                </label>
+                <div class="flex items-center gap-2 self-end">
+                    <button onclick="openEditCurrentMachineModal()" class="bg-slate-800 hover:bg-slate-700 text-brand-cyan border border-slate-700 font-semibold px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5" title="Editar Aparelho">
+                        <i class="fa-solid fa-pen-to-square"></i> Editar
+                    </button>
+                    <button onclick="deleteCurrentMachine()" class="bg-slate-800 hover:bg-slate-700 text-brand-danger border border-slate-700 font-semibold px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5" title="Excluir Aparelho">
+                        <i class="fa-solid fa-trash-can"></i> Excluir
+                    </button>
+                    <label for="machine-photo-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera text-brand-accent"></i> Trocar Foto
+                        <input type="file" id="machine-photo-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -185,7 +193,7 @@
                         <span class="flex items-center gap-1 text-brand-accent"><span class="w-2.5 h-2.5 rounded-full bg-brand-accent"></span> Troca</span>
                     </div>
                 </div>
-                <div id="photo-container" class="relative w-full h-[340px] sm:h-[440px] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden select-none">
+                <div id="photo-container" class="relative w-full h-[340px] sm:h-[440px] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden select-none flex items-center justify-center">
                 </div>
             </div>
 
@@ -230,9 +238,9 @@
                 </label>
             </div>
 
-            <div class="relative w-full h-[320px] sm:h-[400px] bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700 overflow-hidden select-none">
+            <div class="relative w-full h-[320px] sm:h-[400px] bg-slate-950 rounded-2xl border-2 border-dashed border-slate-700 overflow-hidden select-none flex items-center justify-center">
                 <div id="tech-photo-canvas" onclick="handleTechCanvasClick(event)" class="relative w-full h-full flex items-center justify-center cursor-crosshair">
-                    <img id="tech-preview-img" src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80" alt="Nova Máquina" class="w-full h-full object-cover opacity-85">
+                    <img id="tech-preview-img" src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1000&q=80" alt="Nova Máquina" class="w-full h-full object-contain opacity-90">
                     <div id="tech-pins-overlay" class="absolute inset-0 pointer-events-none"></div>
                 </div>
 
@@ -369,6 +377,42 @@
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div id="modal-part-content"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR MÁQUINA -->
+    <div id="modal-edit-machine" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeEditMachineModal()" class="absolute top-4 right-4 w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-pen-to-square text-brand-cyan mr-2"></i> Editar Equipamento</h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Nome do Aparelho:</label>
+                    <input type="text" id="edit-machine-name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Fabricante / Marca:</label>
+                    <input type="text" id="edit-machine-brand" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Código da Fabricante:</label>
+                    <input type="text" id="edit-machine-mfg" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono focus:outline-none focus:border-brand-accent">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Setor / Categoria:</label>
+                    <select id="edit-machine-sector" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-brand-accent">
+                        <option value="Membros Inferiores">Membros Inferiores</option>
+                        <option value="Peitoral / Superiores">Peitoral / Superiores</option>
+                        <option value="Costas & Ombros">Costas & Ombros</option>
+                        <option value="Cabos & Polias">Cabos & Polias</option>
+                    </select>
+                </div>
+                <div class="pt-3">
+                    <button onclick="saveEditedMachine()" class="w-full bg-brand-accent text-slate-950 font-bold py-3 rounded-xl transition shadow-lg">Salvar Alterações</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -584,6 +628,64 @@
             }
         }
 
+        async function deleteMachineFromCloud(machineId) {
+            try {
+                delete gymDatabase[machineId];
+                showToast('Equipamento excluído com sucesso!', 'success');
+                const remainingKeys = Object.keys(gymDatabase);
+                if (remainingKeys.length > 0) {
+                    currentMachineId = remainingKeys[0];
+                    populateMachineDropdown();
+                    renderCurrentMachine();
+                } else {
+                    gymDatabase = defaultInitialDb;
+                    currentMachineId = 'EXTENSORA';
+                    populateMachineDropdown();
+                    renderCurrentMachine();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function openEditCurrentMachineModal() {
+            const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
+            document.getElementById('edit-machine-name').value = machine.name;
+            document.getElementById('edit-machine-brand').value = machine.brand || '';
+            document.getElementById('edit-machine-mfg').value = machine.manufacturerCode || '';
+            document.getElementById('edit-machine-sector').value = machine.category || 'Membros Inferiores';
+            document.getElementById('modal-edit-machine').classList.remove('hidden');
+        }
+
+        function closeEditMachineModal() {
+            document.getElementById('modal-edit-machine').classList.add('hidden');
+        }
+
+        async function saveEditedMachine() {
+            const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
+            machine.name = document.getElementById('edit-machine-name').value.trim() || machine.name;
+            machine.brand = document.getElementById('edit-machine-brand').value.trim() || machine.brand;
+            machine.manufacturerCode = document.getElementById('edit-machine-mfg').value.trim();
+            machine.category = document.getElementById('edit-machine-sector').value;
+
+            await saveMachineToCloud(machine);
+            closeEditMachineModal();
+            populateMachineDropdown();
+            renderCurrentMachine();
+        }
+
+        async function deleteCurrentMachine() {
+            if (Object.keys(gymDatabase).length <= 1) {
+                showToast('Você precisa manter ao menos um equipamento cadastrado.', 'info');
+                return;
+            }
+            if (confirm(`Deseja realmente excluir o aparelho "${gymDatabase[currentMachineId].name}"?`)) {
+                await deleteMachineFromCloud(currentMachineId);
+            }
+        }
+
         function compressImageFile(file, maxWidth = 900, quality = 0.72) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -675,100 +777,106 @@
         function renderPhotoAndPins(machine) {
             const container = document.getElementById('photo-container');
             container.innerHTML = `
-                <img src="${machine.imageUrl}" alt="${machine.name}" class="w-full h-full object-cover">
+                <img src="${machine.imageUrl}" alt="${machine.name}" class="w-full h-full object-contain">
             `;
 
             machine.parts.forEach((part, idx) => {
-                let colorClass = 'bg-emerald-500 text-slate-950';
-                if (part.status === 'worn') colorClass = 'bg-amber-400 text-slate-950';
-                if (part.status === 'replace') colorClass = 'bg-brand-accent text-slate-950 hotspot-pin';
-
-                const pin = document.createElement('button');
-                pin.className = `absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${colorClass} font-black text-xs flex items-center justify-center border-2 border-white shadow-lg transition hover:scale-110`;
-                pin.style.left = `${part.xPercent}%`;
-                pin.style.top = `${part.yPercent}%`;
-                pin.textContent = idx + 1;
-                pin.title = part.name;
-                pin.onclick = () => selectPart(part.id);
-                container.appendChild(pin);
+                const colorClass = part.status === 'good' ? 'bg-emerald-500 text-slate-950' : part.status === 'worn' ? 'bg-amber-400 text-slate-950' : 'bg-brand-accent text-slate-950 hotspot-pin';
+                const pinEl = document.createElement('div');
+                pinEl.className = `absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full ${colorClass} flex items-center justify-center font-black text-xs cursor-pointer shadow-lg border-2 border-white`;
+                pinEl.style.left = `${part.xPercent}%`;
+                pinEl.style.top = `${part.yPercent}%`;
+                pinEl.textContent = idx + 1;
+                pinEl.onclick = () => openPartModalDetail(part.id);
+                container.appendChild(pinEl);
             });
         }
 
         function renderPartsList(machine) {
-            const list = document.getElementById('parts-list');
-            list.innerHTML = machine.parts.map((part, idx) => {
-                let badge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold">OK</span>`;
-                if (part.status === 'worn') badge = `<span class="bg-amber-400/10 text-amber-400 border border-amber-400/30 px-2 py-0.5 rounded text-[10px] font-bold">Desgaste</span>`;
-                if (part.status === 'replace') badge = `<span class="bg-brand-accent/10 text-brand-accent border border-brand-accent/30 px-2 py-0.5 rounded text-[10px] font-bold">Troca</span>`;
+            const listEl = document.getElementById('parts-list');
+            if (!listEl) return;
 
-                const isSelected = currentSelectedPartId === part.id;
-                const activeStyle = isSelected ? 'border-brand-accent bg-slate-950' : 'border-slate-800 bg-slate-950/60 hover:bg-slate-950';
+            listEl.innerHTML = machine.parts.map((part, idx) => {
+                const statusBadge = part.status === 'good' 
+                    ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">OK</span>'
+                    : part.status === 'worn'
+                    ? '<span class="px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30 text-[10px] font-bold">Desgaste</span>'
+                    : '<span class="px-2 py-0.5 rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/30 text-[10px] font-bold">Troca Urgente</span>';
 
                 return `
-                    <div onclick="selectPart('${part.id}')" class="p-3 rounded-2xl border ${activeStyle} cursor-pointer transition flex items-center justify-between gap-3">
+                    <div onclick="openPartModalDetail('${part.id}')" class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition">
                         <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+                            <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-black text-brand-accent">
+                                ${idx + 1}
+                            </div>
                             <div>
                                 <h4 class="text-xs font-bold text-white">${part.name}</h4>
-                                <p class="text-[11px] text-slate-400 font-mono">${part.code} • ${part.vinylType}</p>
+                                <p class="text-[11px] text-slate-400">Revestimento: ${part.vinylType || 'Preto'}</p>
                             </div>
                         </div>
-                        <div>${badge}</div>
+                        <div class="flex items-center gap-2">
+                            ${statusBadge}
+                            <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function selectPart(partId) {
-            currentSelectedPartId = partId;
-            renderCurrentMachine();
-
+        function openPartModalDetail(partId) {
             const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
             const part = machine.parts.find(p => p.id === partId);
             if (!part) return;
 
-            document.getElementById('modal-part-content').innerHTML = `
-                <div class="flex items-center gap-2 text-xs font-mono text-brand-accent mb-1">
-                    <i class="fa-solid fa-couch"></i> ${part.code}
-                </div>
-                <h3 class="text-xl font-extrabold text-white mb-3">${part.name}</h3>
-                
-                <div class="grid grid-cols-2 gap-2.5 mb-4 text-xs">
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-slate-400 block mb-0.5">Revestimento:</span>
-                        <span class="text-slate-200 font-semibold">${part.vinylType}</span>
-                    </div>
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span class="text-slate-400 block mb-0.5">Fixação:</span>
-                        <span class="text-slate-200 font-semibold">${part.fixing}</span>
-                    </div>
-                </div>
+            currentSelectedPartId = partId;
+            pendingDamagePhotoDataUrl = null;
 
-                <div class="bg-slate-950 p-3 rounded-xl border border-dashed border-slate-700 mb-5 text-xs">
-                    <div class="flex items-center justify-between gap-2">
-                        <div>
-                            <span class="text-slate-200 font-bold block"><i class="fa-solid fa-camera text-brand-cyan mr-1"></i> Foto do Dano</span>
-                            <span class="text-slate-400 text-[11px]" id="damage-photo-status">Opcional</span>
+            const content = document.getElementById('modal-part-content');
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-brand-cyan bg-brand-cyan/10 px-2.5 py-0.5 rounded-full border border-brand-cyan/20">${machine.name}</span>
+                        <span class="text-xs font-mono text-slate-400">TAG: ${part.code}</span>
+                    </div>
+                    <h3 class="text-xl font-black text-white">${part.name}</h3>
+                    <p class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">${part.description || 'Nenhum detalhe adicional.'}</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="block text-slate-400 mb-1 font-medium">Revestimento:</span>
+                            <span class="font-bold text-white">${part.vinylType || 'Preto'}</span>
                         </div>
-                        <label for="damage-photo-input" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-brand-cyan border border-slate-700 px-3 py-2 rounded-xl font-semibold transition shrink-0">
-                            <i class="fa-solid fa-upload mr-1"></i> Anexar
-                            <input type="file" id="damage-photo-input" accept="image/*" class="hidden" onchange="handleDamagePhotoSelect(event)">
-                        </label>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="block text-slate-400 mb-1 font-medium">Fixação:</span>
+                            <span class="font-bold text-white">${part.fixing || '4 Parafusos'}</span>
+                        </div>
                     </div>
-                    <img id="damage-photo-preview" src="" alt="Preview" class="hidden mt-3 w-full h-32 object-cover rounded-xl border border-slate-700">
-                </div>
 
-                <div class="flex flex-col sm:flex-row gap-2.5">
-                    <button onclick="requestPartMaintenance('${part.id}')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 border border-slate-700">
-                        <i class="fa-solid fa-cloud-arrow-up text-brand-cyan"></i> Salvar na Nuvem
-                    </button>
-                    <button onclick="sendRequestViaWhatsApp('${part.id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-                        <i class="fa-brands fa-whatsapp text-base"></i> Enviar p/ WhatsApp
-                    </button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-2">Alterar Status do Estofado:</label>
+                        <div class="grid grid-cols-3 gap-2 text-xs">
+                            <button onclick="updatePartStatus('${partId}', 'good')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'good' ? 'bg-emerald-500 text-slate-950 border-emerald-500' : 'bg-slate-950 text-emerald-400 border-slate-800'}">OK</button>
+                            <button onclick="updatePartStatus('${partId}', 'worn')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'worn' ? 'bg-amber-400 text-slate-950 border-amber-400' : 'bg-slate-950 text-amber-400 border-slate-800'}">Desgaste</button>
+                            <button onclick="updatePartStatus('${partId}', 'replace')" class="py-2.5 rounded-xl border font-bold transition ${part.status === 'replace' ? 'bg-brand-accent text-slate-950 border-brand-accent' : 'bg-slate-950 text-brand-accent border-slate-800'}">Troca</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 space-y-3">
+                        <label class="block text-xs font-bold text-slate-300">Solicitar Reforma / Orçamento via WhatsApp:</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1 cursor-pointer bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-camera text-brand-accent"></i> Foto do Dano
+                                <input type="file" accept="image/*" class="hidden" onchange="handleDamagePhoto(event)">
+                            </label>
+                            <button onclick="sendWhatsAppOrder('${partId}')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> Enviar WhatsApp
+                            </button>
+                        </div>
+                        <div id="damage-preview-container" class="hidden"></div>
+                    </div>
                 </div>
             `;
-
-            pendingDamagePhotoDataUrl = null;
             document.getElementById('modal-part-detail').classList.remove('hidden');
         }
 
@@ -776,109 +884,72 @@
             document.getElementById('modal-part-detail').classList.add('hidden');
         }
 
-        async function handleDamagePhotoSelect(event) {
+        async function updatePartStatus(partId, newStatus) {
+            const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
+            const part = machine.parts.find(p => p.id === partId);
+            if (!part) return;
+
+            part.status = newStatus;
+            await saveMachineToCloud(machine);
+            renderCurrentMachine();
+            openPartModalDetail(partId);
+            showToast('Status do estofado atualizado!', 'success');
+        }
+
+        async function handleDamagePhoto(event) {
             const file = event.target.files[0];
             if (!file) return;
             try {
+                showToast('Otimizando foto do dano...', 'info');
                 pendingDamagePhotoDataUrl = await compressImageFile(file, 800, 0.7);
-                const preview = document.getElementById('damage-photo-preview');
-                const status = document.getElementById('damage-photo-status');
-                if (preview) {
-                    preview.src = pendingDamagePhotoDataUrl;
-                    preview.classList.remove('hidden');
-                }
-                if (status) {
-                    status.textContent = 'Foto otimizada e anexada!';
-                    status.classList.replace('text-slate-400', 'text-emerald-400');
-                }
+                const container = document.getElementById('damage-preview-container');
+                container.classList.remove('hidden');
+                container.innerHTML = `
+                    <div class="w-full bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-center">
+                        <img src="${pendingDamagePhotoDataUrl}" alt="Dano" class="max-h-36 w-auto object-contain rounded-lg">
+                    </div>
+                `;
+                showToast('Foto do dano anexada!', 'success');
             } catch (err) {
                 console.error(err);
+                showToast('Erro ao anexar foto.', 'info');
             }
         }
 
-        function requestPartMaintenance(partId) {
+        async function sendWhatsAppOrder(partId) {
             const machine = gymDatabase[currentMachineId];
+            if (!machine) return;
             const part = machine.parts.find(p => p.id === partId);
             if (!part) return;
 
-            part.status = 'replace';
-            const reqId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
-            const newReq = {
-                id: reqId,
+            const orderId = `REQ-${Math.floor(1000 + Math.random() * 9000)}` ;
+            const requestObj = {
+                id: orderId,
+                machineId: machine.id,
                 machineName: machine.name,
                 partName: part.name,
-                partCode: part.code,
-                status: 'Solicitado na Nuvem',
-                date: new Date().toLocaleDateString('pt-BR'),
-                photoUrl: pendingDamagePhotoDataUrl,
-                notes: `Revestimento: ${part.vinylType} | Fixação: ${part.fixing}`
+                notes: `Revestimento: ${part.vinylType || 'Preto'} | Fixação: ${part.fixing || '4 Parafusos'}`,
+                photoUrl: pendingDamagePhotoDataUrl || machine.imageUrl,
+                status: 'Aberto',
+                date: new Date().toLocaleString('pt-BR')
             };
 
-            saveRequestToCloud(newReq);
-            saveMachineToCloud(machine);
-            closePartModal();
-            renderCurrentMachine();
-            showToast('Ordem registrada na nuvem!', 'success');
-        }
+            await saveRequestToCloud(requestObj);
 
-        function sendRequestViaWhatsApp(partId) {
-            const machine = gymDatabase[currentMachineId];
-            const part = machine.parts.find(p => p.id === partId);
-            if (!part) return;
+            const msg = `*ORDEM DE REFORMA - GymUpholstery*%0A` +
+                        `📋 Pedido: *${orderId}*%0A` +
+                        `🏋️ Aparelho: *${machine.name}* (${machine.code})%0A` +
+                        `🪑 Estofado: *${part.name}*%0A` +
+                        `🎨 Revestimento: *${part.vinylType || 'Preto'}*%0A` +
+                        `📌 Fixação: *${part.fixing || '4 Parafusos'}*%0A` +
+                        `📅 Data: ${requestObj.date}`;
 
-            part.status = 'replace';
-            const reqId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
-            const newReq = {
-                id: reqId,
-                machineName: machine.name,
-                partName: part.name,
-                partCode: part.code,
-                status: 'Enviado p/ WhatsApp',
-                date: new Date().toLocaleDateString('pt-BR'),
-                photoUrl: pendingDamagePhotoDataUrl,
-                notes: `Revestimento: ${part.vinylType} | Fixação: ${part.fixing}`
-            };
-
-            saveRequestToCloud(newReq);
-            saveMachineToCloud(machine);
-            closePartModal();
-            renderCurrentMachine();
-
-            const text = `*SOLICITAÇÃO DE REFORMA - CAPOTARIA*\n\n` +
-                         `🆔 *Ordem:* ${reqId}\n` +
-                         `🏋️ *Aparelho:* ${machine.name} (${machine.code})\n` +
-                         `🛋️ *Estofado:* ${part.name}\n` +
-                         `🎨 *Revestimento:* ${part.vinylType}\n` +
-                         `🔩 *Fixação:* ${part.fixing}\n` +
-                         `📅 *Data:* ${new Date().toLocaleDateString('pt-BR')}`;
-
-            const whatsappUrl = `https://api.whatsapp.com/send?phone=&text=${encodeURIComponent(text)}`;
+            const phone = "5531999999999"; // Substitua pelo número do tapeceiro se desejar
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
             window.open(whatsappUrl, '_blank');
-        }
-
-        function openQRModal() {
-            const grid = document.getElementById('qr-machines-grid');
-            grid.innerHTML = '';
-            Object.keys(gymDatabase).forEach(key => {
-                const m = gymDatabase[key];
-                const btn = document.createElement('button');
-                btn.className = 'p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition';
-                btn.innerHTML = `
-                    <div class="text-xs font-bold text-white truncate">${m.name}</div>
-                    <div class="text-[10px] text-brand-accent font-mono">${m.code}</div>
-                `;
-                btn.onclick = () => {
-                    closeQRModal();
-                    switchAppMode('manager');
-                    changeMachine(m.id);
-                };
-                grid.appendChild(btn);
-            });
-            document.getElementById('modal-qr-scanner').classList.remove('hidden');
-        }
-
-        function closeQRModal() {
-            document.getElementById('modal-qr-scanner').classList.add('hidden');
+            closePartModal();
+            showToast('Ordem de reforma registrada na nuvem!', 'success');
         }
 
         function toggleMaintenanceLog() {
@@ -893,7 +964,9 @@
 
         function updateMaintenanceBadge() {
             const badge = document.getElementById('badge-requests-count');
-            if (badge) badge.textContent = maintenanceRequests.length;
+            if (badge) {
+                badge.textContent = maintenanceRequests.length;
+            }
         }
 
         function renderMaintenanceRequests() {
@@ -913,7 +986,11 @@
                     </div>
                     <h4 class="text-sm font-bold text-white">${req.partName} <span class="text-xs font-normal text-slate-400">(${req.machineName})</span></h4>
                     <p class="text-xs text-slate-400">${req.notes}</p>
-                    ${req.photoUrl ? `<img src="${req.photoUrl}" alt="Foto" class="w-full h-28 object-cover rounded-xl border border-slate-800 mt-2">` : ''}
+                    ${req.photoUrl ? `
+                        <div class="w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-800 mt-2 flex items-center justify-center p-2">
+                            <img src="${req.photoUrl}" alt="Foto Completa do Dano" class="max-h-64 w-auto object-contain rounded-lg">
+                        </div>
+                    ` : ''}
                     <div class="text-[11px] text-slate-500 pt-1">Data: ${req.date}</div>
                 </div>
             `).join('');
@@ -1233,9 +1310,28 @@
             if (!container) return;
             const toast = document.createElement('div');
             toast.className = `p-4 rounded-2xl border shadow-2xl bg-slate-900 ${type === 'success' ? 'border-emerald-500 text-white' : 'border-brand-accent text-white'} flex items-center gap-3 text-xs sm:text-sm font-medium`;
-            toast.innerHTML = `<i class="fa-solid fa-cloud text-brand-accent text-lg"><span>${message}</span>`;
+            toast.innerHTML = `<i class="fa-solid fa-cloud text-brand-accent text-lg"></i><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3500);
+        }
+
+        function openQRModal() {
+            const grid = document.getElementById('qr-machines-grid');
+            if (!grid) return;
+            grid.innerHTML = Object.keys(gymDatabase).map(key => {
+                const m = gymDatabase[key];
+                return `
+                    <button onclick="changeMachine('${m.id}'); closeQRModal();" class="p-3 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800 text-left transition">
+                        <span class="block text-xs font-bold text-white truncate">${m.name}</span>
+                        <span class="text-[10px] text-brand-accent font-mono">${m.code}</span>
+                    </button>
+                `;
+            }).join('');
+            document.getElementById('modal-qr-scanner').classList.remove('hidden');
+        }
+
+        function closeQRModal() {
+            document.getElementById('modal-qr-scanner').classList.add('hidden');
         }
     </script>
 </body>
